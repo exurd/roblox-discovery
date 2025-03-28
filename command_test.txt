@@ -1,0 +1,37 @@
+./wget-at \
+-U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0" \
+-nv \
+--no-cookies \
+--host-lookups='dns' \
+--hosts-file='/dev/null' \
+--resolvconf-file='/dev/null' \
+--dns-servers='9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10' \
+--reject-reserved-subnets \
+--prefer-family 'IPv6' \
+--content-on-error \
+--no-http-keep-alive \
+--lua-script 'roblox-assetdelivery.lua' \
+-o 'wget.log' \
+--no-check-certificate \
+--output-document 'wget.tmp' \
+--truncate-output \
+-e 'robots=off' \
+--recursive \
+--level=inf \
+--no-parent \
+--page-requisites \
+--timeout 30 \
+--connect-timeout 1 \
+--tries inf \
+--domains 'roblox.com' \
+--span-hosts \
+--waitretry 30 \
+--warc-file 'test' \
+--warc-header 'operator: Archive Team' \
+--warc-header 'x-wget-at-project-version: TESTVERSION' \
+--warc-header 'x-wget-at-project-name: TEST' \
+--warc-dedup-url-agnostic \
+--warc-compression-use-zstd \
+"https://assetdelivery.roblox.com/v2/assetId/1818" \
+"https://assetdelivery.roblox.com/v2/assetId/1818/version/1" \
+"https://assetdelivery.roblox.com/v2/assetId/17383957280/version/0" \

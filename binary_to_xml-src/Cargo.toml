@@ -1,0 +1,9 @@
+[package]
+name = "binary_to_xml-src"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rbx_binary = "0.7.7"
+rbx_dom_weak = "2.9.0"
+rbx_xml = "0.13.5"
