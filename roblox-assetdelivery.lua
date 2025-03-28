@@ -492,6 +492,26 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_roblox_assets_xml(output)
         return true
       end
+      local c = string.match(content, "{.*}")  -- fonts are contained in a json file
+      if c then
+        discover_roblox_assets(c)
+      end
+      -- TODO: figure out video assets:
+      -- #EXTM3U
+      -- #EXT-X-VERSION:6
+      -- #EXT-X-INDEPENDENT-SEGMENTS
+      -- #EXT-X-DEFINE:NAME="RBX-BASE-URI",VALUE="https://hls-segments.rbxcdn.com/ed9a3eefcfe22d4b455f9b0fc4ccefd0"
+      -- #EXT-X-DEFINE:NAME="RBX-DURATION",VALUE="0"
+      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=243106,BANDWIDTH=243106,RESOLUTION=1080x720,FRAME-RATE=24,CODECS="vp9,opus"
+      -- {$RBX-BASE-URI}/720/cb7c1dc0-a93b-48e6-b426-aaf276175087-720.m3u8
+      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=75887,BANDWIDTH=75887,RESOLUTION=544x360,FRAME-RATE=24,CODECS="vp9,opus"
+      -- {$RBX-BASE-URI}/360/cb7c1dc0-a93b-48e6-b426-aaf276175087-360.m3u8
+      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=30479,BANDWIDTH=30479,RESOLUTION=272x184,FRAME-RATE=24,CODECS="vp9,opus"
+      -- {$RBX-BASE-URI}/184/cb7c1dc0-a93b-48e6-b426-aaf276175087-184.m3u8
+      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=16814,BANDWIDTH=16814,RESOLUTION=136x96,FRAME-RATE=24,CODECS="vp9,opus"
+      -- {$RBX-BASE-URI}/96/cb7c1dc0-a93b-48e6-b426-aaf276175087-96.m3u8
+      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=12202,BANDWIDTH=12202,RESOLUTION=136x96,FRAME-RATE=5,CODECS="vp9,opus"
+      -- {$RBX-BASE-URI}/96-5/cb7c1dc0-a93b-48e6-b426-aaf276175087-96-5.m3u8
       return false
     end
 
