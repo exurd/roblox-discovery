@@ -3,8 +3,14 @@ it's inbetween heaven and hell, but it's not purgatory
 
 the main focus has been on the .lua file. pipeline.py file is untested.
 
-output:
+```zsh
+➜  ~ docker build -t at-debug -f Dockerfile_debug . --platform=linux/amd64
+➜  ~ docker run -it --entrypoint=/bin/bash -v /path/to/roblox-assetdelivery-grab:/data --platform=linux/amd64 -i at-debug
+```
+
 ```bash
+warrior@9fb3cfeac873:~$ cd /data
+warrior@9fb3cfeac873:~$ cp /home/warrior/data/wget-at ./wget-at
 warrior@9fb3cfeac873:/data$ ./wget-at \
 -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0" \
 -nv \
