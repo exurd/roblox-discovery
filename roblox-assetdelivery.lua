@@ -36,7 +36,8 @@
 -- and other asset types that are publicly viewable: can be accessed
 --
 -- Audio: Unavailable, most likely due to the audio privacy update
-
+-- https://www.roblox.com/users/favorites/list-json?assetTypeId=3&cursor=&itemsPerPage=100&userId=*
+-- this can get audio? interesting...
 
 local urlparse = require("socket.url")
 local http = require("socket.http")
@@ -123,7 +124,7 @@ find_item = function(url)
   local type_ = nil
   for pattern, name in pairs({
     -- ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="asset",
-    -- ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
+    ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
     -- ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
     -- ["^https?://www%.roblox%.com/comments/get%-json%?assetId=([0-9]+)&startindex=0&extra=badge$"]="badge",
     ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)$"]="asset",  -- for discovering how many versions (asset:16688968)
@@ -496,22 +497,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       if c then
         discover_roblox_assets(c)
       end
-      -- TODO: figure out video assets:
-      -- #EXTM3U
-      -- #EXT-X-VERSION:6
-      -- #EXT-X-INDEPENDENT-SEGMENTS
-      -- #EXT-X-DEFINE:NAME="RBX-BASE-URI",VALUE="https://hls-segments.rbxcdn.com/ed9a3eefcfe22d4b455f9b0fc4ccefd0"
-      -- #EXT-X-DEFINE:NAME="RBX-DURATION",VALUE="0"
-      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=243106,BANDWIDTH=243106,RESOLUTION=1080x720,FRAME-RATE=24,CODECS="vp9,opus"
-      -- {$RBX-BASE-URI}/720/cb7c1dc0-a93b-48e6-b426-aaf276175087-720.m3u8
-      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=75887,BANDWIDTH=75887,RESOLUTION=544x360,FRAME-RATE=24,CODECS="vp9,opus"
-      -- {$RBX-BASE-URI}/360/cb7c1dc0-a93b-48e6-b426-aaf276175087-360.m3u8
-      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=30479,BANDWIDTH=30479,RESOLUTION=272x184,FRAME-RATE=24,CODECS="vp9,opus"
-      -- {$RBX-BASE-URI}/184/cb7c1dc0-a93b-48e6-b426-aaf276175087-184.m3u8
-      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=16814,BANDWIDTH=16814,RESOLUTION=136x96,FRAME-RATE=24,CODECS="vp9,opus"
-      -- {$RBX-BASE-URI}/96/cb7c1dc0-a93b-48e6-b426-aaf276175087-96.m3u8
-      -- #EXT-X-STREAM-INF:AVERAGE-BANDWIDTH=12202,BANDWIDTH=12202,RESOLUTION=136x96,FRAME-RATE=5,CODECS="vp9,opus"
-      -- {$RBX-BASE-URI}/96-5/cb7c1dc0-a93b-48e6-b426-aaf276175087-96-5.m3u8
       return false
     end
 
@@ -552,22 +537,23 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://catalog%.roblox%.com/v2/recommendations/assets%?") then
       json = cjson.decode(html)
       for _, new_id in pairs(json["data"]) do
-        discover_item(discovered_items, "asset:" .. tostring(new_id))
+        local assetIdStr = string.format("%.0f", new_id)
+        discover_item(discovered_items, "asset:" .. assetIdStr)
       end
     end
     -- (and badge)
-    if string.match(url, "^https?://www%.roblox%.com/comments/get%-json%?") then
-      json = cjson.decode(html)
-      local max_comments = json["MaxRows"]
-      local count = 0
-      for _, comment_data in pairs(json["Comments"]) do
-        count = count + 1
-        discover_item(discovered_items, "user:" .. tostring(comment_data["AuthorId"]))
-      end
-      if count == max_comments then
-        check(increment_param(url, "startindex", 0, max_comments))
-      end
-    end
+    -- if string.match(url, "^https?://www%.roblox%.com/comments/get%-json%?") then
+    --   json = cjson.decode(html)
+    --   local max_comments = json["MaxRows"]
+    --   local count = 0
+    --   for _, comment_data in pairs(json["Comments"]) do
+    --     count = count + 1
+    --     discover_item(discovered_items, "user:" .. tostring(comment_data["AuthorId"]))
+    --   end
+    --   if count == max_comments then
+    --     check(increment_param(url, "startindex", 0, max_comments))
+    --   end
+    -- end
     -- asset end --
 
 
@@ -578,21 +564,38 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     --   check("https://www.roblox.com/users/profile/playerassets-json?assetTypeId=11&userId=" .. item_value)
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/count")
+
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings/count")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers/count")
-      check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
+
+      -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
       check("https://avatar.roblox.com/v1/users/" .. item_value .. "/currently-wearing")
-      check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges?sortOrder=Desc")
-      check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
+      -- check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges?sortOrder=Desc")
+      -- check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
+
+      -- check("https://friends.roblox.com/v1/metadata?targetUserId=" .. item_value)  -- http 504
+
+      -- current friend limit: 1,000
+      check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/find?limit=50")
+
+      -- some users have way too many followers (1 million followers / 100 per page = 10,000 requests).
+      -- who they are following should be fine
+      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=100")
+      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=100")
+
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/primary/role")
       check("https://www.roblox.com/users/" .. item_value .. "/favorites")
       check("https://www.roblox.com/users/" .. item_value .. "/friends")
     end
-    if string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/friends$") then
-      check("https://friends.roblox.com/v1/metadata?targetUserId=" .. item_value)
-      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=18")
-      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=18")
+
+    if string.match(url, "^https?://friends%.roblox%.com/v1/users/[0-9]+/friends/find") then
+      json = cjson.decode(html)
+      for _, data in pairs(json["PageItems"]) do
+        discover_item(discovered_items, "user:" .. tostring(data["id"]))
+      end
+      check_cursor(url, json, "NextCursor")
     end
+
     if string.match(url, "/v1/users/[0-9]+/follow[a-z]+%?") then
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
@@ -600,6 +603,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_item(discovered_items, "user:" .. tostring(data["id"]))
       end
     end
+
     if string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/favorites$") then
       check("https://inventory.roblox.com/v1/users/" .. item_value .. "/categories/favorites")
     end
@@ -609,18 +613,34 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         for _, item_data in pairs(data["items"]) do
           if item_data["type"] == "AssetType" then
             check("https://www.roblox.com/users/favorites/list-json?assetTypeId=" .. tostring(item_data["id"]) .. "&cursor=&itemsPerPage=100&userId=" .. item_value)
+            check("https://inventory.roblox.com/v2/users/".. item_value .."/inventory/" .. tostring(item_data["id"]) .. "?cursor=&limit=100&sortOrder=Desc")
           end
         end
       end
     end
+
+    -- favorites
     if string.match(url, "/users/favorites/list%-json%?") then
       json = cjson.decode(html)
       for _, data in pairs(json["Data"]["Items"]) do
-        discover_item(discovered_items, "asset:" .. tostring(data["Item"]["AssetId"]))
+        -- hack: avoids asset:1.2280314827044e+14 (should this be done to user ids too?)
+        local assetIdStr = string.format("%.0f", data["Item"]["AssetId"])
+        discover_item(discovered_items, "asset:" .. assetIdStr)
         discover_item(discovered_items, "user:" .. tostring(data["Creator"]["Id"]))
       end
       check_cursor(url, json["Data"], "NextCursor")
     end
+    -- inventory
+    if string.match(url, "^https?://inventory%.roblox%.com/v2/users/[0-9]+/inventory/") then
+      json = cjson.decode(html)
+      for _, data in pairs(json["data"]) do
+        local assetIdStr = string.format("%.0f", data["assetId"])
+        discover_item(discovered_items, "asset:" .. assetIdStr)
+        -- discover_item(discovered_items, "user:" .. tostring(data["Creator"]["Id"]))
+      end
+      check_cursor(url, json, "nextPageCursor")
+    end
+
     if string.match(url, "/v1/users/[0-9]+/groups/roles$") then
       json = cjson.decode(html)
       for _, data in pairs(json["data"]) do
@@ -639,7 +659,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "/v1/users/[0-9]+/currently%-wearing$") then
       json = cjson.decode(html)
       for _, new_id in pairs(json["assetIds"]) do
-        discover_item(discovered_items, "asset:" .. tostring(new_id))
+        local assetIdStr = string.format("%.0f", new_id)
+        discover_item(discovered_items, "asset:" .. assetIdStr)
       end
     end
     -- user end --

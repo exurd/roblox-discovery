@@ -7,11 +7,12 @@ data/
 # tmp files
 wget.tmp
 rblx.tmp
+wget.log
 
 # from command_test.txt
 test.warc
 test.warc.zst
-
+_bad-items.txt
 
 # Added by cargo
 debug/

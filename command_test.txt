@@ -35,3 +35,5 @@
 "https://assetdelivery.roblox.com/v2/assetId/1818" \
 "https://assetdelivery.roblox.com/v2/assetId/1818/version/1" \
 "https://assetdelivery.roblox.com/v2/assetId/17383957280/version/0" \
+"https://assetdelivery.roblox.com/v2/assetId/13002514346" \
+"https://users.roblox.com/v1/users/41789"
