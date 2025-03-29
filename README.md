@@ -3,6 +3,13 @@ it's inbetween heaven and hell, but it's not purgatory
 
 the main focus has been on the .lua file. pipeline.py file is untested.
 
+## Items that should be put in `-items` repo
+-   Every asset in the [Roblox Set Archive](https://sets.pizzaboxer.xyz/) (PostgreSQL dump available.)
+-   All of the uncopylocked places that are [listed on the ArchiveTeam Wiki](https://wiki.archiveteam.org/index.php/Roblox/uncopylocked)
+-   Every [Roblox-made](https://www.roblox.com/users/1/profile) asset (catalog, models, etc.)
+
+## Usage, Example and Output
+
 ```zsh
 ➜  ~ docker build -t at-debug -f Dockerfile_debug . --platform=linux/amd64
 ➜  ~ docker run -it --entrypoint=/bin/bash -v /path/to/roblox-assetdelivery-grab:/data --platform=linux/amd64 -i at-debug
