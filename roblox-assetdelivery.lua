@@ -460,7 +460,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
 
     -- direct file (sc*) start --
-    local function discover_roblox_assets_xml(content)  -- plain text
+    local function discover_roblox_assets(content)  -- plain text
       for match in content:gmatch("https?://www%.roblox%.com//?asset/?%?id=(%d+)") do
         discover_item(discovered_items, "asset:" .. match)
       end
@@ -475,7 +475,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     local function check_roblox_type(content)
       local a = string.match(content, "<roblox .*</roblox>")
       if a then
-        discover_roblox_assets_xml(a)
+        discover_roblox_assets(a)
         return true
       end
       local b = string.match(content, "<roblox!.*</roblox>")
@@ -489,7 +489,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         local handle = io.popen(command, "r")
         local output = handle:read("*a")
         handle:close()
-        discover_roblox_assets_xml(output)
+        discover_roblox_assets(output)
         return true
       end
       local c = string.match(content, "{.*}")  -- fonts are contained in a json file
