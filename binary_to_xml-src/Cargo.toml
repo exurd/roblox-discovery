@@ -7,3 +7,9 @@ edition = "2024"
 rbx_binary = "0.7.7"
 rbx_dom_weak = "2.9.0"
 rbx_xml = "0.13.5"
+
+[profile.release]  # https://github.com/johnthagen/min-sized-rust
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
