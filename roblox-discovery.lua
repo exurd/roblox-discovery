@@ -165,8 +165,9 @@ allowed = function(url, parenturl)
   -- https://tr.rbxcdn.com/180DAY-4ede3908c443b6e340f59e565f435136/500/280/Image/Jpeg/noFilter
   -- https://tr.rbxcdn.com/180DAY-4ab2f5dd6264a34f6fe7d898324bb244/700/700/Head/Png/noFilter
   -- https://tr.rbxcdn.com/%E2%AC%A7q%DE(%CEo  (???)
+  -- https://tr.rbxcdn.com/180DAY-be8a76bdad030dc3dbe3a3d591197140/420/420/Image/Png/%90%E0%A8%88%B0w%8E%B7P%A1%CF]Z%5C%E2%08%D6gY%ADz%15Sc  (??????)
+  -- the problem is that i don't know how many different *real* tr.rbxcdn urls out there (/image, /head, /food, /animal, /mineral, /fakecategoryhere, etc.)
   if string.match(url, "^https?://tr%.rbxcdn%.com/[0-9a-z-A-Z-]+") then
-    print(url)
     return true
   end
 
@@ -865,13 +866,21 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     -- badges start --
     if string.match(url, "^https?://badges%.roblox%.com/v1/badges/[0-9]+$") then
+      json = cjson.decode(html)
+      discover_item(discovered_items, "asset:" .. tostring(json["iconImageId"]))
+      discover_item(discovered_items, "universe:" .. tostring(json["awardingUniverse"]["id"]))
+      discover_item(discovered_items, "place:" .. tostring(json["awardingUniverse"]["rootPlaceId"]))
+
       check("https://www.roblox.com/badges/" .. item_value)
       check("https://web.roblox.com/badges/" .. item_value)
-      -- TODO: thumbnail here
-      -- if tonumber(item_value) is under 2124421087 then  -- badges below this number were part of the asset types
-      -- check asset api
-      -- check asset thumbnail api as well
-      -- end
+      discover_item(discovered_items, "thumbnail:" .. tostring(item_value) .. ":badge")
+      if tonumber(item_value) < 2124421087 then
+        -- badges below this number were part of the asset types
+        -- check asset apis and thumbnail api
+        check("https://catalog.roblox.com/v1/favorites/assets/"..item_value.."/count")
+        discover_item(discovered_items, "economy:" .. tostring(item_value))
+        discover_item(discovered_items, "thumbnail:" .. tostring(item_value)..":asset")
+      end
     end
     -- badges end --
 
