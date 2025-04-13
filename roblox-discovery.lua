@@ -525,26 +525,22 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
 
     function get_hash_url(hash)  -- TODO: check if it works
-      -- Check if the hash string already contains the specific substring.
       if string.find(hash, "mats%-thumbnails%.roblox%.com") then
         return hash
       end
     
       local st = 31
-      -- Loop over each character in the hash string.
       for i = 1, #hash do
-        st = st ~ string.byte(hash, i)  -- Bitwise XOR with the byte value of the character.
+        st = st ~ string.byte(hash, i)
       end
-    
-      -- Construct and return the URL using string.format.
       return string.format("https://t%d.rbxcdn.com/%s", st % 8, hash)
     end
 
-    local function check_thumbnails(id, type)
-      -- Available values : 30x30, 42x42, 50x50, 60x62, 75x75, 110x110, 140x140, 150x150, 160x100, 160x600, 250x250, 256x144, 300x250, 304x166, 384x216, 396x216, 420x420, 480x270, 512x512, 576x324, 700x700, 728x90, 768x432, 1200x80, 330x110, 660x220, 
-      -- Available values : Png, Jpeg, Webp
-      -- isCircular only works on: 30x30, 42x42, 50x50, 75x75, 110x110, 140x140, 150x150, 250x250, 420x420, 700x700
 
+    -- thumbnails api start --
+    local THUMBNAIL_SIZES = {"30x30", "42x42", "50x50", "60x62", "75x75", "110x110", "140x140", "150x150", "160x100", "160x600", "250x250", "256x144", "300x250", "304x166", "384x216", "396x216", "420x420", "480x270", "512x512", "576x324", "700x700", "728x90", "768x432", "1200x80", "330x110", "660x220"}
+    local THUMBANIL_FORMAT = {"Png", "Jpeg", "Webp"}
+    local function check_thumbnails(id, prefix)  -- prefix = "users/avatar?userIds="
       -- user outfit id:
       -- https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=41789&size=150x150&format=Png&isCircular=false
       -- https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=1
@@ -587,7 +583,19 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- asset id:
       -- https://thumbnails.roblox.com/v1/assets?assetIds=746767604&format=png&isCircular=false&size=150x150
 
+      for _, thmb_format in THUMBANIL_FORMAT do
+        for _, thmb_size in THUMBNAIL_SIZES do
+          check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format)
+          check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=false")
+          local a, b = size:match("^(%d+)x(%d+)$")
+          if a == b then  -- isCircular
+            check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=true")
+          end
+        end
+      end
     end
+    -- thumbnails api end --
+
 
     if string.match(url, "^https?://sc[0-9].rbxcdn.com/[a-z0-9]+?__token__") then
       -- binary: `<roblox!` to `</roblox>`
