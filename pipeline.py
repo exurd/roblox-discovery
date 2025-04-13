@@ -1,9 +1,9 @@
 # encoding=utf8
-import datetime
+# import datetime
 from distutils.version import StrictVersion
 import hashlib
 import os
-import random
+# import random
 from seesaw.config import realize, NumberConfigValue
 from seesaw.externalprocess import ExternalProcess
 from seesaw.item import ItemInterpolation, ItemValue
@@ -12,10 +12,10 @@ from seesaw.tracker import GetItemFromTracker, PrepareStatsForTracker, \
     UploadWithTracker, SendDoneToTracker
 import shutil
 import socket
-import subprocess
+# import subprocess
 import sys
 import time
-import string
+# import string
 import re
 
 if sys.version_info[0] < 3:
@@ -29,10 +29,10 @@ from seesaw.pipeline import Pipeline
 from seesaw.project import Project
 from seesaw.util import find_executable
 
-from tornado import httpclient
+# from tornado import httpclient
 
-import requests
-import zstandard
+# import requests
+# import zstandard
 
 if StrictVersion(seesaw.__version__) < StrictVersion('0.8.5'):
     raise Exception('This pipeline needs seesaw version 0.8.5 or higher.')
