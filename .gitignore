@@ -12,6 +12,7 @@ wget.log
 # from command_test.txt
 test.warc
 test.warc.zst
+test.warc.gz
 _bad-items.txt
 
 # Added by cargo
