@@ -18,6 +18,11 @@ import time
 import string
 import re
 
+if sys.version_info[0] < 3:
+    from urllib import unquote
+else:
+    from urllib.parse import unquote
+
 import seesaw
 from seesaw.externalprocess import WgetDownload
 from seesaw.pipeline import Pipeline
@@ -55,7 +60,7 @@ WGET_AT = find_executable(
     'Wget+AT',
     HigherVersion(
         r'(GNU Wget 1\.[0-9]{2}\.[0-9]{1}-at\.[0-9]{8}\.[0-9]{2})[^0-9a-zA-Z\.-_]',
-        'GNU Wget 1.21.3-at.20230623.01'
+        'GNU Wget 1.21.3-at.20241119.01'
     ),
     [
         './wget-at',
@@ -72,9 +77,9 @@ if not WGET_AT:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20240421.02'
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0'
-TRACKER_ID = 'roblox-marketplace-comments'
+VERSION = 'DEV'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0'
+TRACKER_ID = 'roblox-discovery'
 TRACKER_HOST = 'legacy-api.arpa.li'
 MULTI_ITEM_SIZE = 10
 
@@ -141,7 +146,7 @@ class PrepareDirectories(SimpleTask):
             time.strftime('%Y%m%d-%H%M%S')
         ])
 
-        open('%(item_dir)s/%(warc_file_base)s.warc.zst' % item, 'w').close()
+        open('%(item_dir)s/%(warc_file_base)s.warc.gz' % item, 'w').close()
         open('%(item_dir)s/%(warc_file_base)s_data.txt' % item, 'w').close()
 
 class MoveFiles(SimpleTask):
@@ -149,12 +154,21 @@ class MoveFiles(SimpleTask):
         SimpleTask.__init__(self, 'MoveFiles')
 
     def process(self, item):
-        os.rename('%(item_dir)s/%(warc_file_base)s.warc.zst' % item,
-              '%(data_dir)s/%(warc_file_base)s.%(dict_project)s.%(dict_id)s.warc.zst' % item)
+        os.rename('%(item_dir)s/%(warc_file_base)s.warc.gz' % item,
+              '%(data_dir)s/%(warc_file_base)s.warc.gz' % item)
         os.rename('%(item_dir)s/%(warc_file_base)s_data.txt' % item,
               '%(data_dir)s/%(warc_file_base)s_data.txt' % item)
 
         shutil.rmtree('%(item_dir)s' % item)
+
+
+def normalize_string(s):
+    while True:
+        temp = unquote(s).strip().lower()
+        if temp == s:
+            break
+        s = temp
+    return s
 
 
 class SetBadUrls(SimpleTask):
@@ -164,12 +178,13 @@ class SetBadUrls(SimpleTask):
     def process(self, item):
         item['item_name_original'] = item['item_name']
         items = item['item_name'].split('\0')
-        items_lower = [s.lower() for s in items]
+        items_lower = [normalize_string(s) for s in items]
         with open('%(item_dir)s/%(warc_file_base)s_bad-items.txt' % item, 'r') as f:
-            for aborted_item in f:
-                aborted_item = aborted_item.strip().lower()
-                index = items_lower.index(aborted_item)
-                item.log_output('Item {} is aborted.'.format(aborted_item))
+            for s in {
+                normalize_string(s) for s in f
+            }:
+                index = items_lower.index(s)
+                item.log_output('Item {} is aborted.'.format(s))
                 items.pop(index)
                 items_lower.pop(index)
         item['item_name'] = '\0'.join(items)
@@ -188,7 +203,7 @@ def get_hash(filename):
 
 CWD = os.getcwd()
 PIPELINE_SHA1 = get_hash(os.path.join(CWD, 'pipeline.py'))
-LUA_SHA1 = get_hash(os.path.join(CWD, 'roblox-marketplace-comments.lua'))
+LUA_SHA1 = get_hash(os.path.join(CWD, 'roblox-assets.lua'))
 
 def stats_id_function(item):
     d = {
@@ -200,50 +215,7 @@ def stats_id_function(item):
     return d
 
 
-class ZstdDict(object):
-    created = 0
-    data = None
-
-    @classmethod
-    def get_dict(cls):
-        if cls.data is not None and time.time() - cls.created < 1800:
-            return cls.data
-        response = requests.get(
-            'https://legacy-api.arpa.li/dictionary',
-            params={
-                'project': TRACKER_ID
-            }
-        )
-        response.raise_for_status()
-        response = response.json()
-        if cls.data is not None and response['id'] == cls.data['id']:
-            cls.created = time.time()
-            return cls.data
-        print('Downloading latest dictionary.')
-        response_dict = requests.get(response['url'])
-        response_dict.raise_for_status()
-        raw_data = response_dict.content
-        if hashlib.sha256(raw_data).hexdigest() != response['sha256']:
-            raise ValueError('Hash of downloaded dictionary does not match.')
-        if raw_data[:4] == b'\x28\xB5\x2F\xFD':
-            raw_data = zstandard.ZstdDecompressor().decompress(raw_data)
-        cls.data = {
-            'id': response['id'],
-            'dict': raw_data
-        }
-        cls.created = time.time()
-        return cls.data
-
-
 class WgetArgs(object):
-    post_chars = string.digits + string.ascii_lowercase
-
-    def int_to_str(self, i):
-        d, m = divmod(i, 36)
-        if d > 0:
-            return self.int_to_str(d) + self.post_chars[m]
-        return self.post_chars[m]
-
     def realize(self, item):
         wget_args = [
             WGET_AT,
@@ -255,10 +227,9 @@ class WgetArgs(object):
             '--resolvconf-file', '/dev/null',
             '--dns-servers', '9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10',
             '--reject-reserved-subnets',
-            '--prefer-family', ('IPv4' if 'PREFER_IPV4' in os.environ else 'IPv6'),
+            #'--prefer-family', ('IPv4' if 'PREFER_IPV4' in os.environ else 'IPv6'),
             '--content-on-error',
-            '--no-http-keep-alive',
-            '--lua-script', 'roblox-marketplace-comments.lua',
+            '--lua-script', 'roblox-assets.lua',
             '-o', ItemInterpolation('%(item_dir)s/wget.log'),
             '--no-check-certificate',
             '--output-document', ItemInterpolation('%(item_dir)s/wget.tmp'),
@@ -278,17 +249,7 @@ class WgetArgs(object):
             '--warc-header', 'x-wget-at-project-version: ' + VERSION,
             '--warc-header', 'x-wget-at-project-name: ' + TRACKER_ID,
             '--warc-dedup-url-agnostic',
-            '--warc-compression-use-zstd',
-            '--warc-zstd-dict-no-include',
         ]
-        dict_data = ZstdDict.get_dict()
-        with open(os.path.join(item['item_dir'], 'zstdict'), 'wb') as f:
-            f.write(dict_data['dict'])
-        item['dict_id'] = dict_data['id']
-        item['dict_project'] = TRACKER_ID
-        wget_args.extend([
-            '--warc-zstd-dict', ItemInterpolation('%(item_dir)s/zstdict'),
-        ])
 
         if '--concurrent' in sys.argv:
             concurrency = int(sys.argv[sys.argv.index('--concurrent')+1])
@@ -306,14 +267,13 @@ class WgetArgs(object):
                 wget_args.extend(['--warc-header', 'roblox-asset-id: '+item_value])
                 wget_args.append('https://assetdelivery.roblox.com/v2/assetId/{}'.format(item_value))
             elif item_type == 'assetver':
-                # split asset id and asset version
-                asset_id, asset_version = item_value.split("_", 1)
+                asset_id, asset_version = item_value.split(':', 1)
                 wget_args.extend(['--warc-header', 'roblox-asset-id: '+ asset_id])
-                wget_args.extend(['--warc-header', 'roblox-assetversionnumber: '+ asset_version])
+                wget_args.extend(['--warc-header', 'roblox-asset-{}-version: '.format(asset_id, asset_version)])
                 wget_args.append('https://assetdelivery.roblox.com/v2/assetId/{}/version/{}'.format(asset_id, asset_version))
-            # elif item_type == 'user':
-            #     wget_args.extend(['--warc-header', 'roblox-user-id: '+item_value])
-            #     wget_args.append('https://users.roblox.com/v1/users/'+item_value)
+            elif item_type == 'user':
+                wget_args.extend(['--warc-header', 'roblox-user-id: '+item_value])
+                wget_args.append('https://users.roblox.com/v1/users/'+item_value)
             # elif item_type == 'group':
             #     wget_args.extend(['--warc-header', 'roblox-group-id: '+item_value])
             #     wget_args.append('https://groups.roblox.com/v1/groups/'+item_value)
@@ -343,8 +303,8 @@ project = Project(
     title=TRACKER_ID,
     project_html='''
         <img class="project-logo" alt="Project logo" src="https://wiki.archiveteam.org/images/4/45/Roblox-icon-black.png" height="50px" title=""/>
-        <h2>Roblox Marketplace comments <span class="links"><a href="https://www.roblox.com/library/">Website</a> &middot; <a href="http://tracker.archiveteam.org/roblox-marketplace-comments/">Leaderboard</a> &middot; <a href="https://wiki.archiveteam.org/index.php/Roblox">Wiki</a></span></h2>
-        <p>Archiving Roblox Marketplace comments.</p>
+        <h2>Roblox Discovery <span class="links"><a href="https://roblox.com/">Website</a> &middot; <a href="http://tracker.archiveteam.org/roblox-discovery/">Leaderboard</a> &middot; <a href="https://wiki.archiveteam.org/index.php/Roblox">Wiki</a></span></h2>
+        <p>Discovering Roblox items (Users, Groups, Games, Badges, etc.)</p>
     '''
 )
 
@@ -370,7 +330,7 @@ pipeline = Pipeline(
         defaults={'downloader': downloader, 'version': VERSION},
         file_groups={
             'data': [
-                ItemInterpolation('%(item_dir)s/%(warc_file_base)s.warc.zst')
+                ItemInterpolation('%(item_dir)s/%(warc_file_base)s.warc.gz')
             ]
         },
         id_function=stats_id_function,
@@ -384,14 +344,12 @@ pipeline = Pipeline(
             downloader=downloader,
             version=VERSION,
             files=[
-                ItemInterpolation('%(data_dir)s/%(warc_file_base)s.%(dict_project)s.%(dict_id)s.warc.zst'),
+                ItemInterpolation('%(data_dir)s/%(warc_file_base)s.warc.gz'),
                 ItemInterpolation('%(data_dir)s/%(warc_file_base)s_data.txt')
             ],
             rsync_target_source_path=ItemInterpolation('%(data_dir)s/'),
             rsync_extra_args=[
                 '--recursive',
-                '--partial',
-                '--partial-dir', '.rsync-tmp',
                 '--min-size', '1',
                 '--no-compress',
                 '--compress-level', '0'
