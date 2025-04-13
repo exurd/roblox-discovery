@@ -86,6 +86,7 @@ find_item = function(url)
   for pattern, name in pairs({
     -- ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
+    ["^https?://www%.roblox%.com/games/([0-9]+)$"]="place",
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
     ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
     ["^https?://games%.roblox%.com/v1/games%?universeIds=([0-9]+)$"]="universe",  -- TODO: check if %? is right
@@ -138,10 +139,13 @@ allowed = function(url, parenturl)
   end
 
   if string.match(url, "^https?://[^/]+/login%?")
+    or string.match(url, "^https?://[^/]+/[a-z][a-z]/login%?")
     or string.match(url, "^https?://[^/]+/[nN]ew[lL]ogin%?")
+    or string.match(url, "^https?://[^/]+/[a-z][a-z]/[nN]ew[lL]ogin%?")
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/wear$")
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/remove$")
     or string.match(url, "^https?://[^/]+/abusereport/")
+    or string.match(url, "^https://apis%.roblox%.com/voting%-api/vote/asset/[0-9]+%?vote=")
     -- we want the translated infomation/websites as creators can add their own translations
     -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
     -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/users/")
@@ -884,6 +888,25 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
     -- badges end --
 
+    -- places start --
+    if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+/[0-9a-zA-Z-]+$") then
+      check("https://web.roblox.com/games/" .. item_value)
+      check("https://web.roblox.com/games/" .. item_value)
+      check("https://www.roblox.com/games/votingservice/" .. item_value)
+      check("https://apis.roblox.com/universes/v1/places/"..item_value.."/universe")  -- universe: item
+
+      -- TODO: https://www.roblox.com/games/getgamepassesinnerpartial?startIndex=0&maxRows=50&placeId=8737899170
+      discover_item(discovered_items, "economy:" .. tostring(item_value))
+      discover_item(discovered_items, "thumbnail:" .. tostring(item_value)..":place")
+    end
+
+    if string.match(url, "^https?://apis%.roblox%.com/universes/v1/places/[0-9]+/universe$") then
+      json = cjson.decode(html)
+      local uniIdStr = string.format("%.0f", json["universeId"])
+      discover_item(discovered_items, "universe:" .. tostring(uniIdStr))
+    end
+    -- places end --
+
     -- universes start --
     if string.match(url, "^https?://games%.roblox%.com/v1/games%?universeIds=[0-9]+$") then
       check("https://www.roblox.com/games/badges-section/" .. item_value)
@@ -893,7 +916,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://apis.roblox.com/asset-text-filter-settings/public/universe/" .. item_value)
 
       discover_item(discovered_items, "universe:" .. tostring(item_value) .. ":badges")
-      -- https://badges.roblox.com/v1/universes/7006259506/badges?limit=100&sortOrder=Asc  -- unibadges: item
+      -- TODO: https://badges.roblox.com/v1/universes/7006259506/badges?limit=100&sortOrder=Asc  -- unibadges: item
     end
     -- universes end --
 
