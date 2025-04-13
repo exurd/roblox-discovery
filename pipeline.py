@@ -203,7 +203,7 @@ def get_hash(filename):
 
 CWD = os.getcwd()
 PIPELINE_SHA1 = get_hash(os.path.join(CWD, 'pipeline.py'))
-LUA_SHA1 = get_hash(os.path.join(CWD, 'roblox-assets.lua'))
+LUA_SHA1 = get_hash(os.path.join(CWD, 'roblox-discovery.lua'))
 
 def stats_id_function(item):
     d = {
@@ -229,7 +229,7 @@ class WgetArgs(object):
             '--reject-reserved-subnets',
             #'--prefer-family', ('IPv4' if 'PREFER_IPV4' in os.environ else 'IPv6'),
             '--content-on-error',
-            '--lua-script', 'roblox-assets.lua',
+            '--lua-script', 'roblox-discovery.lua',
             '-o', ItemInterpolation('%(item_dir)s/wget.log'),
             '--no-check-certificate',
             '--output-document', ItemInterpolation('%(item_dir)s/wget.tmp'),
