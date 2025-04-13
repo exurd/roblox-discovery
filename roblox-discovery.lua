@@ -871,9 +871,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- badges start --
     if string.match(url, "^https?://badges%.roblox%.com/v1/badges/[0-9]+$") then
       json = cjson.decode(html)
-      discover_item(discovered_items, "asset:" .. tostring(json["iconImageId"]))
-      discover_item(discovered_items, "universe:" .. tostring(json["awardingUniverse"]["id"]))
-      discover_item(discovered_items, "place:" .. tostring(json["awardingUniverse"]["rootPlaceId"]))
+
+      local iconIdStr = string.format("%.0f", json["iconImageId"])
+      local uniIdStr = string.format("%.0f", json["awardingUniverse"]["id"])
+      local rootPlaceIdStr = string.format("%.0f", json["awardingUniverse"]["rootPlaceId"])
+      discover_item(discovered_items, "asset:" .. tostring(iconIdStr))
+      discover_item(discovered_items, "universe:" .. tostring(uniIdStr))
+      discover_item(discovered_items, "place:" .. tostring(rootPlaceIdStr))
 
       check("https://www.roblox.com/badges/" .. item_value)
       check("https://web.roblox.com/badges/" .. item_value)
