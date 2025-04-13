@@ -164,8 +164,9 @@ allowed = function(url, parenturl)
 
   -- https://tr.rbxcdn.com/180DAY-4ede3908c443b6e340f59e565f435136/500/280/Image/Jpeg/noFilter
   -- https://tr.rbxcdn.com/180DAY-4ab2f5dd6264a34f6fe7d898324bb244/700/700/Head/Png/noFilter
-  -- 
-  if string.match(url, "^https?://tr%.rbxcdn%.com/") then
+  -- https://tr.rbxcdn.com/%E2%AC%A7q%DE(%CEo  (???)
+  if string.match(url, "^https?://tr%.rbxcdn%.com/[0-9a-z-A-Z-]+") then
+    print(url)
     return true
   end
 
