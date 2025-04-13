@@ -1,43 +1,4 @@
--- dofile("table_show.lua")
-
--- Here's the plan:
--- ‘asset:’ will be used for discovering how many versions an asset has.
--- For each version an item will be created that contains the asset and the specific version (‘assetver:*_*’).
---
--- Due to the new signature implementation that they added a few months ago,
--- it's possible to get different location URLs when you request the same version of an asset.
--- Requesting both V1's HTTP api and V2's JSON api can sometimes have different location urls,
--- but which still leads to the same file.
---
--- The header contains multiple custom properties. `roblox-assetversionnumber` gives the version number;
--- on version 0, this gives us the latest version number available. That is how we'll discover the versions.
--- `roblox-assettypeid` can tell us what asset type to expect
--- (https://create.roblox.com/docs/reference/engine/enums/AssetType), but the assetdelivery api is generic,
--- so it shouldn't matter what the asset is.
---
---
--- For discovery:
--- There are some Roblox apis that can allow us to get more assets to download, like user favorites/inventories.
--- However due to the short amount of time, I want to avoid making the whole thing being just getting new assets,
--- so a priority of “archive, then discover” needs to be taken.
---
--- I have kept the functions from `roblox-marketplace-comments.lua` in here so it's easy to discover new user assets.
---
--- It’s possible to find assets inside places, models and catalog items. Discovering those IDs has been
--- implemented in this script.
---
---
--- What can be archived (wip):
---
--- Places: only uncopylocked places can be accessed.
--- They should be sparingly added into the tracker, as most (if not all) will *not* be uncopylocked.
---
--- Catalog items, models, free plugins, decals and images, meshes
--- and other asset types that are publicly viewable: can be accessed
---
--- Audio: Unavailable, most likely due to the audio privacy update
--- https://www.roblox.com/users/favorites/list-json?assetTypeId=3&cursor=&itemsPerPage=100&userId=*
--- this can get audio? interesting...
+-- roblox-discovery.lua
 
 local urlparse = require("socket.url")
 local http = require("socket.http")
@@ -46,6 +7,8 @@ local cjson = require("cjson")
 local utf8 = require("utf8")
 local base64 = require("base64")
 local ltn12 = require("ltn12")
+
+local zlib = require("zlib")
 
 local item_dir = os.getenv("item_dir")
 local warc_file_base = os.getenv("warc_file_base")
@@ -68,8 +31,6 @@ local discovered_outlinks = {}
 local discovered_items = {}
 local bad_items = {}
 local ids = {}
-
-local thread_counts = {}
 
 local retry_url = false
 local is_initial_url = true
@@ -123,12 +84,14 @@ find_item = function(url)
   local value = nil
   local type_ = nil
   for pattern, name in pairs({
-    -- ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="asset",
+    -- ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
-    -- ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
-    -- ["^https?://www%.roblox%.com/comments/get%-json%?assetId=([0-9]+)&startindex=0&extra=badge$"]="badge",
+    ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
+    ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
+    ["^https?://games%.roblox%.com/v1/games%?universeIds=([0-9]+)$"]="universe",  -- TODO: check if %? is right
+    ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
     ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)$"]="asset",  -- for discovering how many versions (asset:16688968)
-    ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)/version/([0-9]+)$"]="assetver"  -- for archiving  (assetver:16688968_0)
+    ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+/version/[0-9]+)$"]="assetver"  -- for archiving  (assetver:16688968_0)
   }) do
     value = string.match(url, pattern)
     type_ = name
@@ -149,16 +112,16 @@ set_item = function(url)
   if found then
     item_type = found["type"]
     item_value = found["value"]
-    if item_type == "assetver" then  -- hack: get correct item_value for "assetver" types
-      local asset_id, version = string.match(url, "^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)/version/([0-9]+)$")
-      if asset_id and version then
-        item_value = asset_id.."_"..version
-      end
+    if item_type == "assetver" then
+      item_value = string.gsub(item_value, "/version/", ":")
     end
     item_name_new = item_type .. ":" .. item_value
     if item_name_new ~= item_name then
       ids = {}
       ids[item_value] = true
+      if string.match(item_value, ":") then
+        ids[string.match(item_value, "^([^:]+):")] = true
+      end
       abortgrab = false
       tries = 0
       retry_url = false
@@ -179,9 +142,10 @@ allowed = function(url, parenturl)
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/wear$")
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/remove$")
     or string.match(url, "^https?://[^/]+/abusereport/")
-    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
-    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/users/")
-    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/groups/")
+    -- we want the translated infomation/websites as creators can add their own translations
+    -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
+    -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/users/")
+    -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/groups/")
     or string.match(url, "^https?://www%.roblox%.com/messages/compose%?") then
     return false
   end
@@ -198,17 +162,21 @@ allowed = function(url, parenturl)
     end
   end
 
-  if string.match(url, "^https?://assetdelivery%.roblox%.com/v1/asset.*$") then
+  -- https://tr.rbxcdn.com/180DAY-4ede3908c443b6e340f59e565f435136/500/280/Image/Jpeg/noFilter
+  -- https://tr.rbxcdn.com/180DAY-4ab2f5dd6264a34f6fe7d898324bb244/700/700/Head/Png/noFilter
+  -- 
+  if string.match(url, "^https?://tr%.rbxcdn%.com/") then
     return true
   end
 
-  if string.match(url, "^https?://assetdelivery%.roblox%.com/v2/assetId.*$") then
-    return true
-  end
-
-  if string.match(url, "^https?://sc[0-9].rbxcdn.com/[a-z0-9]+?__token__") then
-    return true
-  end
+  -- if string.match(url, "^https?://[^/]*roblox.com/(?:[a-z]{2}/)?(?:catalog|bundles|users|groups|communities|badges)/.*$")
+  --   or string.match(url, "^https?://creator%.roblox.com/store/asset.*$")  -- https://create.roblox.com/store/asset/53326/Neutral-Spawn-Location
+  --   or string.match(url, "^https?://assetdelivery%.roblox%.com/v1/asset.*$")
+  --   or string.match(url, "^https?://assetdelivery%.roblox%.com/v2/assetId.*$")
+    -- or string.match(url, "^https?://sc[0-9]%.rbxcdn%.com/[a-z0-9]+?__token__") then
+  -- if string.match(url, "^https?://tr%.rbxcdn%.com/") then  -- https://tr.rbxcdn.com/180DAY-4ede3908c443b6e340f59e565f435136/500/280/Image/Jpeg/noFilter
+  --   return true
+  -- end
 
   return false
 end
@@ -415,11 +383,65 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
   end
 
+  local function runcom(command)
+    local handle = io.popen(command)
+    local output = handle:read("*a")
+    handle:close()
+    handle = nil
+
+    return output
+  end
+
+  local function decompress_gzip(file)
+    local f = assert(io.open(file, "rb"))
+    local compressed_data = f:read("*all")
+    f:close()
+
+    local stream = zlib.inflate()
+    local output, eof, bytes_in, bytes_out = stream(compressed_data)
+
+    return output
+  end
+
   if allowed(url)
     and (status_code < 300 or status_code == 302) then
     html = read_file(file)
-    -- print(file)
 
+    -- economy api start --
+    -- rate limit: 1 minute
+    -- ... :)
+    -- https://economy.roblox.com/v2/assets/94625279904133/details
+    -- roblox-made items can use the assetdelivery api! (for now...?)
+    if string.match(url, "^https?://economy%.roblox%.com/v2/assets/[0-9]+/details$") then
+      json = cjson.decode(html)
+      if json["IconImageAssetId"] != 0 then
+        -- TODO: add icon image asset to discovery
+      end
+      local creator_type = json["Creator"]["CreatorType"]
+      local creator_id = json["Creator"]["CreatorTargetId"]
+      discover_item(discovered_items, string.lower(creator_type) .. ":" .. tostring(creator_id))
+      -- should i use catalog apis' collectableitemid or this ones'?
+      -- if json["CollectibleItemId"] != nil then
+      --   -- check("https://economy.roblox.com/v1/assets/1149615185/resale-data")
+      --   -- https://apis.roblox.com/marketplace-sales/v1/item/8538d6c8-ce05-4f11-a358-1a12b8086e1c/resellers?limit=100
+      --   discover_item(discovered_items, "collectableitem:" .. tostring(json["CollectibleItemId"]))
+      -- end
+    end
+
+    if string.match(url, "^https?://economy%.roblox%.com/v2/assets/[0-9a-z%-]+/resale-data$") then
+      json = cjson.decode(html)
+      if json["IconImageAssetId"] != 0 then
+        -- add icon image asset to discovery
+      end
+      local creator_type = json["Creator"]["CreatorType"]
+      local creator_id = json["Creator"]["CreatorTargetId"]
+      discover_item(discovered_items, string.lower(creator_type) .. ":" .. tostring(creator_id))
+      if json["CollectibleItemId"] != nil then
+        discover_item(discovered_items, "collectableitem:" .. tostring(json["CollectibleItemId"]))
+      end
+    end
+
+    -- economy api start --
 
     -- assetdelivery start --
 
@@ -439,18 +461,17 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     local asset_id = url:match("/v2/assetId/([0-9]+)$")
     if asset_id then
       local command = 'wget -q -S -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0" -O /dev/null "' .. url .. '" 2>&1'
-      local handle = io.popen(command)
-      local output = handle:read("*a")
-      handle:close()
+      local output = runcom(command)
 
       local version_number = output:match("roblox%-assetversionnumber: (%d+)")
 
       if version_number then
         for i=0, version_number do
-          discover_item(discovered_items, "assetver:" .. asset_id .. "_" .. i)
+          discover_item(discovered_items, "assetver:" .. asset_id .. ":" .. i)
         end
       end
       check("https://assetdelivery.roblox.com/v1/asset?id="..asset_id)
+      output = nil
     end
 
     local asset_id, version = string.match(url, "^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)/version/([0-9]+)$")
@@ -481,16 +502,19 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
       local b = string.match(content, "<roblox!.*</roblox>")
       if b then
-        local temp = "rblx.tmp"
+        print("Running the binary_to_xml binary.")
+        local temp = file .. "_rblx.tmp"
         local f = io.open(temp, "w")
         f:write(b)
         f:close()
 
         local command = "./binary_to_xml < " .. temp
-        local handle = io.popen(command, "r")
-        local output = handle:read("*a")
-        handle:close()
+        local output = runcom(command)
+        if not string.match(output, "[%s]") then
+          error("No output retrieved.")
+        end
         discover_roblox_assets(output)
+        output = nil
         return true
       end
       local c = string.match(content, "{.*}")  -- fonts are contained in a json file
@@ -498,6 +522,71 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_roblox_assets(c)
       end
       return false
+    end
+
+    function get_hash_url(hash)  -- TODO: check if it works
+      -- Check if the hash string already contains the specific substring.
+      if string.find(hash, "mats%-thumbnails%.roblox%.com") then
+        return hash
+      end
+    
+      local st = 31
+      -- Loop over each character in the hash string.
+      for i = 1, #hash do
+        st = st ~ string.byte(hash, i)  -- Bitwise XOR with the byte value of the character.
+      end
+    
+      -- Construct and return the URL using string.format.
+      return string.format("https://t%d.rbxcdn.com/%s", st % 8, hash)
+    end
+
+    local function check_thumbnails(id, type)
+      -- Available values : 30x30, 42x42, 50x50, 60x62, 75x75, 110x110, 140x140, 150x150, 160x100, 160x600, 250x250, 256x144, 300x250, 304x166, 384x216, 396x216, 420x420, 480x270, 512x512, 576x324, 700x700, 728x90, 768x432, 1200x80, 330x110, 660x220, 
+      -- Available values : Png, Jpeg, Webp
+      -- isCircular only works on: 30x30, 42x42, 50x50, 75x75, 110x110, 140x140, 150x150, 250x250, 420x420, 700x700
+
+      -- user outfit id:
+      -- https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=41789&size=150x150&format=Png&isCircular=false
+      -- https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=1
+
+      -- user id:
+      -- https://thumbnails.roblox.com/v1/users/avatar?userIds=1&size=30x30&format=Png&isCircular=false
+      -- https://thumbnails.roblox.com/v1/users/avatar-3d?userId=1
+      -- https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=1&size=48x48&format=Png&isCircular=false
+      -- https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=1&size=48x48&format=Png&isCircular=false
+
+      -- universe id:
+      -- https://thumbnails.roblox.com/v1/games/icons?universeIds=7006259506&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
+      -- https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=7006259506&countPerUniverse=10&defaults=true&size=768x432&format=Png&isCircular=false
+
+      -- place id:
+      -- https://thumbnails.roblox.com/v1/places/gameicons?placeIds=1818&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
+
+      -- group id:
+      -- https://thumbnails.roblox.com/v1/groups/icons?groupIds=34370120&size=150x150&format=Png&isCircular=false
+
+      -- bundle id:
+      -- https://thumbnails.roblox.com/v1/bundles/thumbnails?bundleIds=2738&size=150x150&format=Png&isCircular=false
+      -- https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=18176448538
+
+      -- badge id:
+      -- https://thumbnails.roblox.com/v1/badges/icons?badgeIds=3553892029567363&size=150x150&format=Png&isCircular=false
+
+      -- catalog assets:
+      -- https://thumbnails.roblox.com/v1/assets-thumbnail-3d?assetId=746767604
+
+      -- catalog(?) animation asset:
+      -- https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955
+
+      -- developer product id:
+      -- https://thumbnails.roblox.com/v1/developer-products/icons?developerProductIds=120&size=150x150&format=Png&isCircular=false
+
+      -- gamepass id:
+      -- https://thumbnails.roblox.com/v1/game-passes?gamePassIds=1&size=150x150&format=Png&isCircular=false
+
+      -- asset id:
+      -- https://thumbnails.roblox.com/v1/assets?assetIds=746767604&format=png&isCircular=false&size=150x150
+
     end
 
     if string.match(url, "^https?://sc[0-9].rbxcdn.com/[a-z0-9]+?__token__") then
@@ -510,14 +599,12 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         -- hell
 
         -- check if html compressed
-        local command = 'gunzip -dc wget.tmp &> /dev/null'
-        local handle = io.popen(command)
-        local output = handle:read("*a")
-        handle:close()
+        local output = decompress_gzip(file)
 
         if not output:match("not in gzip format") then
           check_roblox_type(output)
         end
+        output = nil
       end
     end
     -- direct file (sc*) end --
@@ -529,6 +616,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       local creator_id = json["creatorId"] or json["creatorTargetId"]
       discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. tostring(creator_id))
       check("https://www.roblox.com/catalog/" .. item_value)
+      check("https://web.roblox.com/catalog/" .. item_value)
       -- check("https://www.roblox.com/comments/get-json?assetId=" .. item_value .. "&startindex=0&thumbnailWidth=100&thumbnailHeight=100&thumbnailFormat=PNG")
       check("https://catalog.roblox.com/v1/favorites/assets/" .. item_value .. "/count")
       check("https://catalog.roblox.com/v2/recommendations/assets?assetId=" .. item_value .. "&assetTypeId=8&numItems=7")
@@ -541,51 +629,79 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_item(discovered_items, "asset:" .. assetIdStr)
       end
     end
-    -- (and badge)
-    -- if string.match(url, "^https?://www%.roblox%.com/comments/get%-json%?") then
-    --   json = cjson.decode(html)
-    --   local max_comments = json["MaxRows"]
-    --   local count = 0
-    --   for _, comment_data in pairs(json["Comments"]) do
-    --     count = count + 1
-    --     discover_item(discovered_items, "user:" .. tostring(comment_data["AuthorId"]))
-    --   end
-    --   if count == max_comments then
-    --     check(increment_param(url, "startindex", 0, max_comments))
-    --   end
-    -- end
-    -- asset end --
 
 
     -- user start --
     if string.match(url, "^https?://users%.roblox%.com/v1/users/[0-9]+$") then
-    --   check("https://www.roblox.com/users/" .. item_value)  -- 307
-    --   check("https://www.roblox.com/users/profile/playerassets-json?assetTypeId=10&userId=" .. item_value)
-    --   check("https://www.roblox.com/users/profile/playerassets-json?assetTypeId=11&userId=" .. item_value)
+      check("https://www.roblox.com/users/" .. item_value)
+      check("https://web.roblox.com/users/" .. item_value)
+      check("https://users.roblox.com/v1/users/" .. item_value)
+      check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
+
+      -- user profile showcase items
+      check("https://apis.roblox.com/showcases-api/v1/users/profile/playerassets-json?assetTypeId=10&userId=" .. item_value)
+      check("https://apis.roblox.com/showcases-api/v1/users/profile/playerassets-json?assetTypeId=11&userId=" .. item_value)
+
+      -- inventory check (rate limited)
+      check("https://inventory.roblox.com/v1/users/" .. item_value .. "/can-view-inventory")
+
+      -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
+
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/count")
 
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings/count")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers/count")
 
-      -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
       check("https://avatar.roblox.com/v1/users/" .. item_value .. "/currently-wearing")
-      -- check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges?sortOrder=Desc")
-      -- check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
 
-      -- check("https://friends.roblox.com/v1/metadata?targetUserId=" .. item_value)  -- http 504
 
-      -- current friend limit: 1,000
+      -- check if user has any player badges
+      check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges")
+
+
+      check("https://friends.roblox.com/v1/metadata?targetUserId=" .. item_value)
+
+      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":favorites")  -- public regardless of inventory
+      -- check("https://www.roblox.com/users/" .. item_value .. "/favorites")
+      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":games")
+
+      -- current friend limit: 1,000 (not a huge limit yet so should be fine to do in user:)
+      -- discover_item(discovered_items, "user:" .. tostring(item_value) .. ":friends")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/find?limit=50")
+      -- check("https://www.roblox.com/users/" .. item_value .. "/friends")
 
-      -- some users have way too many followers (1 million followers / 100 per page = 10,000 requests).
-      -- who they are following should be fine
-      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=100")
+      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":followers")
+      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":following")
+      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=100")
       -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=100")
 
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/primary/role")
-      check("https://www.roblox.com/users/" .. item_value .. "/favorites")
-      check("https://www.roblox.com/users/" .. item_value .. "/friends")
+      check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles?includeLocked=true")
+
+    end
+
+    -- {"canView":false}
+    -- {"canView":true}
+    if string.match(url, "^https?://inventory%.roblox%.com/v1/users/[0-9]+/can-view-inventory$") then
+      json = cjson.decode(html)
+      print(json["canView"])
+      if json["canView"] == true then  -- TODO: TEST THIS PART
+        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":inventory")
+        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":bundles")
+        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":gamepasses")
+      end
+    end
+
+    -- player badges in user inventory *CHECK*
+    -- if empty, then user has not collected any badges or has a private inventory:
+      -- {"previousPageCursor":null,"nextPageCursor":null,"data":[]}
+    if string.match(url, "^https?://badges%.roblox%.com/v1/users/[0-9]+/badges$") then
+      json = cjson.decode(html)
+      print(json["data"])
+      if json["data"] != [] then
+        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":badges")
+      end
     end
 
     if string.match(url, "^https?://friends%.roblox%.com/v1/users/[0-9]+/friends/find") then
@@ -669,18 +785,31 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- group start --
     if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+$") then
       check("https://www.roblox.com/groups/" .. item_value)
+      check("https://web.roblox.com/groups/" .. item_value)
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/roles")
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership")
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership?includeNotificationPreferences=true")
-      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/name-history")
+      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/name-history")  -- TODO: pagecursor
+      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")  -- nextrowindex(? interesting)
+      check("https://groups.roblox.com/v1/featured-content/event?groupId=" .. item_value)  -- TODO: find group with event
       check("https://games.roblox.com/v2/groups/" .. item_value .. "/games?accessFilter=Public&cursor=&limit=50&sortOrder=Desc")
       check("https://apis.roblox.com/community-links/v1/groups/" .. item_value .. "/community")
-      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/roles/51323954/users?cursor=&limit=50&sortOrder=Desc")
       check("https://groups.roblox.com/v2/groups/" .. item_value .. "/wall/posts?cursor=&limit=50&sortOrder=Desc")
       check("https://catalog.roblox.com/v1/search/items?category=All&creatorTargetId=" .. item_value .. "&creatorType=Group&cursor=&limit=50&sortOrder=Desc&sortType=Updated")
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")
+      -- TODO: thumbnail here
     end
-    if string.match(url, "/v1/groups/[0-9]+/roles/[0-9]+/users%?") then
+    if string.match(url, "/v1/groups/[0-9]+/name-history$") then
+      json = cjson.decode(html)
+      check_cursor(url, json, "nextPageCursor")
+    end
+    if string.match(url, "/v1/groups/[0-9]+/roles$") then
+      json = cjson.decode(html)
+      for _, role in pairs(json["roles"]) do  -- TODO: TEST
+        discover_item(discovered_items, "group:" .. tostring(json["groupId"]) .. ":role:" .. tostring(role["id"]))
+      end
+    end
+    if string.match(url, "/v1/groups/[0-9]+/roles/[0-9]+/users%?") then  -- group:*:role:*
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
       for _, data in pairs(json["data"]) do
@@ -706,6 +835,31 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
     -- group end --
+
+    -- badges start --
+    if string.match(url, "^https?://badges%.roblox%.com/v1/badges/[0-9]+$") then
+      check("https://www.roblox.com/badges/" .. item_value)
+      check("https://web.roblox.com/badges/" .. item_value)
+      -- TODO: thumbnail here
+      -- if tonumber(item_value) is under 2124421087 then  -- badges below this number were part of the asset types
+      -- check asset api
+      -- check asset thumbnail api as well
+      -- end
+    end
+    -- badges end --
+
+    -- universes start --
+    if string.match(url, "^https?://games%.roblox%.com/v1/games%?universeIds=[0-9]+$") then
+      check("https://www.roblox.com/games/badges-section/" .. item_value)
+      check("https://web.roblox.com/games/badges-section/" .. item_value)
+      check("https://games.roblox.com/v1/games/recommendations/game/" .. item_value .. "?maxRows=6")
+      check("https://apis.roblox.com/asset-text-filter-settings/public/universe/" .. item_value)
+      check("https://apis.roblox.com/asset-text-filter-settings/public/universe/" .. item_value)
+
+      discover_item(discovered_items, "universe:" .. tostring(item_value) .. ":badges")
+      -- https://badges.roblox.com/v1/universes/7006259506/badges?limit=100&sortOrder=Asc  -- unibadges: item
+    end
+    -- universes end --
 
 
     if string.match(html, "^%s*{") then
@@ -861,19 +1015,19 @@ wget.callbacks.finish = function(start_time, end_time, wall_time, numurls, total
       if killgrab then
         return false
       end
-    --   local body, code, headers, status = http.request(
-    --     "https://legacy-api.arpa.li/backfeed/legacy/" .. key,
-    --     items .. "\0"
-    --   )
-    --   if code == 200 and body ~= nil and cjson.decode(body)["status_code"] == 200 then
-    --     io.stdout:write(string.match(body, "^(.-)%s*$") .. "\n")
-    --     io.stdout:flush()
-    --     return nil
-    --   end
-    --   io.stdout:write("Failed to submit discovered URLs." .. tostring(code) .. tostring(body) .. "\n")
-    --   io.stdout:flush()
-    --   os.execute("sleep " .. math.floor(math.pow(2, tries)))
-    --   tries = tries + 1
+      -- local body, code, headers, status = http.request(
+      --   "https://legacy-api.arpa.li/backfeed/legacy/" .. key,
+      --   items .. "\0"
+      -- )
+      -- if code == 200 and body ~= nil and cjson.decode(body)["status_code"] == 200 then
+      --   io.stdout:write(string.match(body, "^(.-)%s*$") .. "\n")
+      --   io.stdout:flush()
+      --   return nil
+      -- end
+      -- io.stdout:write("Failed to submit discovered URLs." .. tostring(code) .. tostring(body) .. "\n")
+      -- io.stdout:flush()
+      -- os.execute("sleep " .. math.floor(math.pow(2, tries)))
+      -- tries = tries + 1
       print("SIMULATING SEND TO BACKFEED!")
       return nil  -- simulate sending to backfeed
     end
@@ -888,10 +1042,10 @@ wget.callbacks.finish = function(start_time, end_time, wall_time, numurls, total
   end
   file:close()
   for key, data in pairs({
-    ["roblox-marketplace-comments-kunfnmnk3etom8k6"] = discovered_items,
-    ["urls-qjseqz8p7belr3yx"] = discovered_outlinks
+    ["roblox-discovery-DEVELOPMENT"] = discovered_items,
+    ["urls-ygcue8vtvkp47f8c"] = discovered_outlinks
   }) do
-    print('queuing for', string.match(key, "^(.+)%-"))
+    print("queuing for", string.match(key, "^(.+)%-"))
     local items = nil
     local count = 0
     for item, _ in pairs(data) do
