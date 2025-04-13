@@ -414,14 +414,14 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- roblox-made items can use the assetdelivery api! (for now...?)
     if string.match(url, "^https?://economy%.roblox%.com/v2/assets/[0-9]+/details$") then
       json = cjson.decode(html)
-      if json["IconImageAssetId"] != 0 then
+      if json["IconImageAssetId"] ~= 0 then
         -- TODO: add icon image asset to discovery
       end
       local creator_type = json["Creator"]["CreatorType"]
       local creator_id = json["Creator"]["CreatorTargetId"]
       discover_item(discovered_items, string.lower(creator_type) .. ":" .. tostring(creator_id))
       -- should i use catalog apis' collectableitemid or this ones'?
-      -- if json["CollectibleItemId"] != nil then
+      -- if json["CollectibleItemId"] ~= nil then
       --   -- check("https://economy.roblox.com/v1/assets/1149615185/resale-data")
       --   -- https://apis.roblox.com/marketplace-sales/v1/item/8538d6c8-ce05-4f11-a358-1a12b8086e1c/resellers?limit=100
       --   discover_item(discovered_items, "collectableitem:" .. tostring(json["CollectibleItemId"]))
@@ -430,13 +430,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     if string.match(url, "^https?://economy%.roblox%.com/v2/assets/[0-9a-z%-]+/resale-data$") then
       json = cjson.decode(html)
-      if json["IconImageAssetId"] != 0 then
+      if json["IconImageAssetId"] ~= 0 then
         -- add icon image asset to discovery
       end
       local creator_type = json["Creator"]["CreatorType"]
       local creator_id = json["Creator"]["CreatorTargetId"]
       discover_item(discovered_items, string.lower(creator_type) .. ":" .. tostring(creator_id))
-      if json["CollectibleItemId"] != nil then
+      if json["CollectibleItemId"] ~= nil then
         discover_item(discovered_items, "collectableitem:" .. tostring(json["CollectibleItemId"]))
       end
     end
@@ -524,14 +524,32 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       return false
     end
 
+
+    local function xor(a, b)
+      local result = 0
+      local bit_val = 1
+      while a > 0 or b > 0 do
+        local a_bit = a % 2
+        local b_bit = b % 2
+        if a_bit ~= b_bit then
+          result = result + bit_val
+        end
+        a = math.floor(a / 2)
+        b = math.floor(b / 2)
+        bit_val = bit_val * 2
+      end
+      return result
+    end
+
+
     function get_hash_url(hash)  -- TODO: check if it works
       if string.find(hash, "mats%-thumbnails%.roblox%.com") then
         return hash
       end
-    
+
       local st = 31
       for i = 1, #hash do
-        st = st ~ string.byte(hash, i)
+        st = xor(st, string.byte(hash, i))
       end
       return string.format("https://t%d.rbxcdn.com/%s", st % 8, hash)
     end
@@ -587,7 +605,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         for _, thmb_size in THUMBNAIL_SIZES do
           check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format)
           check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=false")
-          local a, b = size:match("^(%d+)x(%d+)$")
+          local a, b = thmb_size:match("^(%d+)x(%d+)$")
           if a == b then  -- isCircular
             check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=true")
           end
@@ -707,7 +725,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://badges%.roblox%.com/v1/users/[0-9]+/badges$") then
       json = cjson.decode(html)
       print(json["data"])
-      if json["data"] != [] then
+      if json["data"] ~= {} then
         discover_item(discovered_items, "user:" .. tostring(item_value) .. ":badges")
       end
     end
