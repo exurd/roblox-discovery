@@ -1,5 +1,5 @@
-./wget-at \
--U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0" \
+/home/warrior/data/wget-at \
+-U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0" \
 -nv \
 --no-cookies \
 --host-lookups='dns' \
@@ -7,10 +7,8 @@
 --resolvconf-file='/dev/null' \
 --dns-servers='9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10' \
 --reject-reserved-subnets \
---prefer-family 'IPv6' \
 --content-on-error \
---no-http-keep-alive \
---lua-script 'roblox-assetdelivery.lua' \
+--lua-script 'roblox-discovery.lua' \
 -o 'wget.log' \
 --no-check-certificate \
 --output-document 'wget.tmp' \
@@ -31,9 +29,4 @@
 --warc-header 'x-wget-at-project-version: TESTVERSION' \
 --warc-header 'x-wget-at-project-name: TEST' \
 --warc-dedup-url-agnostic \
---warc-compression-use-zstd \
-"https://assetdelivery.roblox.com/v2/assetId/1818" \
-"https://assetdelivery.roblox.com/v2/assetId/1818/version/1" \
-"https://assetdelivery.roblox.com/v2/assetId/17383957280/version/0" \
-"https://assetdelivery.roblox.com/v2/assetId/13002514346" \
-"https://users.roblox.com/v1/users/41789"
+"URL"

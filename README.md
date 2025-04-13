@@ -48,9 +48,8 @@ The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states the
 
 ```bash
 warrior@9fb3cfeac873:~$ cd /data
-warrior@9fb3cfeac873:~$ cp /home/warrior/data/wget-at ./wget-at
-warrior@9fb3cfeac873:/data$ ./wget-at \
--U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0" \
+warrior@9fb3cfeac873:/data$ /home/warrior/data/wget-at \
+-U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0" \
 -nv \
 --no-cookies \
 --host-lookups='dns' \
@@ -58,9 +57,7 @@ warrior@9fb3cfeac873:/data$ ./wget-at \
 --resolvconf-file='/dev/null' \
 --dns-servers='9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10' \
 --reject-reserved-subnets \
---prefer-family 'IPv6' \
 --content-on-error \
---no-http-keep-alive \
 --lua-script 'roblox-discovery.lua' \
 -o 'wget.log' \
 --no-check-certificate \
@@ -73,5 +70,14 @@ warrior@9fb3cfeac873:/data$ ./wget-at \
 --page-requisites \
 --timeout 30 \
 --connect-timeout 1 \
+--tries inf \
+--domains 'roblox.com' \
+--span-hosts \
+--waitretry 30 \
+--warc-file 'test' \
+--warc-header 'operator: Archive Team' \
+--warc-header 'x-wget-at-project-version: TESTVERSION' \
+--warc-header 'x-wget-at-project-name: TEST' \
+--warc-dedup-url-agnostic \
 "https://URLHERE.com/PLEASE/REPLACE.ME"
 ```
