@@ -682,7 +682,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://avatar.roblox.com/v1/users/" .. item_value .. "/currently-wearing")
 
 
-      -- check if user has any player badges
+      -- check if user has any player badges (NOT THE ACTUAL BADGE INVENTORY GRAB)
       check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges")
 
 

@@ -277,9 +277,9 @@ class WgetArgs(object):
             # elif item_type == 'group':
             #     wget_args.extend(['--warc-header', 'roblox-group-id: '+item_value])
             #     wget_args.append('https://groups.roblox.com/v1/groups/'+item_value)
-            # elif item_type == 'badge':
-            #     wget_args.extend(['--warc-header', 'roblox-badge-id: '+item_value])
-            #     wget_args.append('https://www.roblox.com/comments/get-json?assetId={}&startindex=0&extra=badge'.format(item_value))
+            elif item_type == 'badge':
+                wget_args.extend(['--warc-header', 'roblox-badge-id: '+item_value])
+                wget_args.append('https://badges.roblox.com/v1/badges/'+item_value)
             else:
                 raise Exception('Unknown item')
 
