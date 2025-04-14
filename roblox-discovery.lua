@@ -84,6 +84,7 @@ find_item = function(url)
   local value = nil
   local type_ = nil
   for pattern, name in pairs({
+    -- ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=[0-9]+$"]="outfit",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Bundle$"]="bundle",
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
@@ -558,7 +559,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
 
 
-    function get_hash_url(hash)  -- TODO: check if it works
+    function get_hash_url(hash)
       if string.find(hash, "mats%-thumbnails%.roblox%.com") then
         return hash
       end
@@ -629,7 +630,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
-    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-3d%?assetId=[0-9]+$") then
+    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/(assets%-thumbnail|users/outfit)%-3d%?(asset|outfit)Id=[0-9]+$") then
       -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
       -- {"targetId":746767604,"state":"Completed","imageUrl":"https://t0.rbxcdn.com/180DAY-fe81470b075061200d032362af72a6d0","version":"TN3"}
       json = cjson.decode(html)
@@ -637,7 +638,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         retry_url = true  -- TODO: test if this works
       end
     end
-    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+$") then
+    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+$") then  -- TODO: why is it sometimes stopping on the OBJ file? (https://t7.rbxcdn.com/30DAY-Avatar-8B080423FACAA7979DC01A7CC5A3170F-Obj)
       -- check if it's json
       local status, json = pcall(function()
         return cjson.decode(html)
@@ -693,23 +694,45 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- get 3d thumbnail
       check("https://thumbnails.roblox.com/v1/assets-thumbnail-3d?assetId=" .. item_value)
     end
-    -- if string.match(url, "^https?://catalog%.roblox%.com/v1/catalog/items/[0-9]+/details%?itemType=Bundle$") then
-    --   check("https://catalog.roblox.com/v1/catalog/items/15837813902/details?itemType=bundle")  -- webpack and .js script have two different api requests, one being lower case and the other Sentence case...
-    --   json = cjson.decode(html)
-    --   local creator_id = json["creatorId"] or json["creatorTargetId"]
-    --   discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. tostring(creator_id))
-    --   check("https://www.roblox.com/catalog/" .. item_value)
-    --   check("https://web.roblox.com/catalog/" .. item_value)
-    --   -- check("https://www.roblox.com/comments/get-json?assetId=" .. item_value .. "&startindex=0&thumbnailWidth=100&thumbnailHeight=100&thumbnailFormat=PNG")
-    --   check("https://catalog.roblox.com/v1/favorites/assets/" .. item_value .. "/count")
-    --   check("https://catalog.roblox.com/v2/recommendations/assets?assetId=" .. item_value .. "&assetTypeId=8&numItems=7")
-    --   check("https://catalog.roblox.com/v2/recommendations/assets?assetId=" .. item_value .. "&assetTypeId=8&numItems=50")
-    -- end
+    if string.match(url, "^https?://catalog%.roblox%.com/v1/catalog/items/[0-9]+/details%?itemType=Bundle$") then
+      -- TODO: deal with `"collectibleItemId": "a109ad8b-7c6b-49bc-914b-f7712da5f53e",` in json
+      check("https://catalog.roblox.com/v1/catalog/items/".. item_value .."/details?itemType=bundle")  -- webpack and .js script have two different api requests, one being lower case and the other Sentence case...
+      json = cjson.decode(html)
+
+      local creator_id = json["creatorId"] or json["creatorTargetId"]
+      discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. tostring(creator_id))
+
+      check("https://www.roblox.com/bundles/" .. item_value)
+      check("https://web.roblox.com/bundles/" .. item_value)
+
+      check("https://catalog.roblox.com/v1/bundles/details?bundleIds[]=" .. item_value)
+      check("https://catalog.roblox.com/v1/favorites/bundles/" .. item_value .. "/count")
+
+      check("https://catalog.roblox.com/v2/recommendations/bundles?bundleId=" .. item_value .. "&bundleTypeId=".. tostring(json["bundleType"]) .."&numItems=7")
+      check("https://catalog.roblox.com/v2/recommendations/bundles?bundleId=" .. item_value .. "&bundleTypeId=".. tostring(json["bundleType"]) .."&numItems=50")
+      
+      for _, item in pairs(json["bundledItems"]) do
+        local idStr = string.format("%.0f", item["id"])
+        if item["type"] == "Asset" then
+          discover_item(discovered_items, "asset:" .. idStr)
+        end
+        if item["type"] == "UserOutfit" then
+          discover_item(discovered_items, "outfit:" .. idStr)
+        end
+      end
+    end
     if string.match(url, "^https?://catalog%.roblox%.com/v2/recommendations/assets%?") then
       json = cjson.decode(html)
       for _, new_id in pairs(json["data"]) do
         local assetIdStr = string.format("%.0f", new_id)
         discover_item(discovered_items, "asset:" .. assetIdStr)
+      end
+    end
+    if string.match(url, "^https?://catalog%.roblox%.com/v2/recommendations/bundles%?") then
+      json = cjson.decode(html)
+      for _, new_id in pairs(json["data"]) do
+        local assetIdStr = string.format("%.0f", new_id)
+        discover_item(discovered_items, "bundle:" .. assetIdStr)
       end
     end
     -- catalog and bundles end --
