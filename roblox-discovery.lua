@@ -651,7 +651,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         -- ]
         check(get_hash_url(tostring(json["mtl"])))
         check(get_hash_url(tostring(json["obj"])))
-        for _, tex in ipairs(json["textures"]) do
+        for _, tex in pairs(json["textures"]) do
           check(get_hash_url(tostring(tex)))
         end
       end
