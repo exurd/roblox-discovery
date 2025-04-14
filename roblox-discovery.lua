@@ -681,7 +681,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     -- catalog and bundles start --
     if string.match(url, "^https?://catalog%.roblox%.com/v1/catalog/items/[0-9]+/details%?itemType=Asset$") then
-      check("https://catalog.roblox.com/v1/catalog/items/15837813902/details?itemType=asset")  -- website's webpack and .js script have two different api requests, one being lower case and the other Sentence case...
+      check("https://catalog.roblox.com/v1/catalog/items/".. item_value .."/details?itemType=asset")  -- website's webpack and .js script have two different api requests, one being lower case and the other Sentence case...
       json = cjson.decode(html)
       local creator_id = json["creatorId"] or json["creatorTargetId"]
       discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. tostring(creator_id))
