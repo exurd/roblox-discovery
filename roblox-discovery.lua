@@ -145,6 +145,7 @@ allowed = function(url, parenturl)
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/wear$")
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/remove$")
     or string.match(url, "^https?://[^/]+/abusereport/")
+    or string.match(url, "^https?://[^/]+/[a-z][a-z]/abusereport/")
     or string.match(url, "^https://apis%.roblox%.com/voting%-api/vote/asset/[0-9]+%?vote=")
     -- we want the translated infomation/websites as creators can add their own translations
     -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
@@ -171,7 +172,7 @@ allowed = function(url, parenturl)
   -- https://tr.rbxcdn.com/%E2%AC%A7q%DE(%CEo  (???)
   -- https://tr.rbxcdn.com/180DAY-be8a76bdad030dc3dbe3a3d591197140/420/420/Image/Png/%90%E0%A8%88%B0w%8E%B7P%A1%CF]Z%5C%E2%08%D6gY%ADz%15Sc  (??????)
   -- the problem is that i don't know how many different *real* tr.rbxcdn urls out there (/image, /head, /food, /animal, /mineral, /fakecategoryhere, etc.)
-  if string.match(url, "^https?://tr%.rbxcdn%.com/[0-9a-z-A-Z-]+") then
+  if string.match(url, "^https?://tr%.rbxcdn%.com/(?!.*%)[0-9a-z-A-Z-]+/") then
     return true
   end
 
@@ -730,7 +731,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- {"previousPageCursor":null,"nextPageCursor":null,"data":[]}
     if string.match(url, "^https?://badges%.roblox%.com/v1/users/[0-9]+/badges$") then
       json = cjson.decode(html)
-      print(json["data"])
       if json["data"] ~= {} then
         discover_item(discovered_items, "user:" .. tostring(item_value) .. ":badges")
       end
@@ -752,20 +752,21 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
-    if string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/favorites$") then
-      check("https://inventory.roblox.com/v1/users/" .. item_value .. "/categories/favorites")
-    end
-    if string.match(url, "/v1/users/[0-9]+/categories/favorites$") then
-      json = cjson.decode(html)
-      for _, data in pairs(json["categories"]) do
-        for _, item_data in pairs(data["items"]) do
-          if item_data["type"] == "AssetType" then
-            check("https://www.roblox.com/users/favorites/list-json?assetTypeId=" .. tostring(item_data["id"]) .. "&cursor=&itemsPerPage=100&userId=" .. item_value)
-            check("https://inventory.roblox.com/v2/users/".. item_value .."/inventory/" .. tostring(item_data["id"]) .. "?cursor=&limit=100&sortOrder=Desc")
-          end
-        end
-      end
-    end
+    -- TODO: update favorites and inventory code
+    -- if string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/favorites$") then
+    --   check("https://inventory.roblox.com/v1/users/" .. item_value .. "/categories/favorites")
+    -- end
+    -- if string.match(url, "/v1/users/[0-9]+/categories/favorites$") then
+    --   json = cjson.decode(html)
+    --   for _, data in pairs(json["categories"]) do
+    --     for _, item_data in pairs(data["items"]) do
+    --       if item_data["type"] == "AssetType" then
+    --         check("https://www.roblox.com/users/favorites/list-json?assetTypeId=" .. tostring(item_data["id"]) .. "&cursor=&itemsPerPage=100&userId=" .. item_value)
+    --         check("https://inventory.roblox.com/v2/users/".. item_value .."/inventory/" .. tostring(item_data["id"]) .. "?cursor=&limit=100&sortOrder=Desc")
+    --       end
+    --     end
+    --   end
+    -- end
 
     -- favorites
     if string.match(url, "/users/favorites/list%-json%?") then
@@ -974,7 +975,8 @@ wget.callbacks.write_to_warc = function(url, http_stat)
   is_initial_url = false
   if http_stat["statcode"] ~= 200
     and http_stat["statcode"] ~= 301
-    and http_stat["statcode"] ~= 302 then
+    and http_stat["statcode"] ~= 302
+    and http_stat["statcode"] ~= 307 then  -- 18=307 https://www.roblox.com/users/29666286
     retry_url = true
     return false
   end
