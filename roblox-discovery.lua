@@ -84,7 +84,7 @@ find_item = function(url)
   local value = nil
   local type_ = nil
   for pattern, name in pairs({
-    -- ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=[0-9]+$"]="outfit",
+    ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=([0-9]+)$"]="outfit",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Bundle$"]="bundle",
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
@@ -410,14 +410,18 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
   end
 
   local function decompress_gzip(file)
-    local f = assert(io.open(file, "rb"))
-    local compressed_data = f:read("*all")
-    f:close()
+    local status, output = pcall(function()
+      local f = assert(io.open(file, "rb"))
+      local compressed_data = f:read("*all")
+      f:close()
 
-    local stream = zlib.inflate()
-    local output, eof, bytes_in, bytes_out = stream(compressed_data)
-
-    return output
+      local stream = zlib.inflate()
+      local output, eof, bytes_in, bytes_out = stream(compressed_data)
+      return output
+    end)
+    if status then
+      return output
+    end
   end
 
   if allowed(url)
@@ -630,21 +634,44 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
-    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/(assets%-thumbnail|users/outfit)%-3d%?(asset|outfit)Id=[0-9]+$") then
+    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=[0-9]+$")
+    or string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-3d%?assetId=[0-9]+$") then
       -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
       -- {"targetId":746767604,"state":"Completed","imageUrl":"https://t0.rbxcdn.com/180DAY-fe81470b075061200d032362af72a6d0","version":"TN3"}
       json = cjson.decode(html)
       if json["state"] == "Pending" then
-        retry_url = true  -- TODO: test if this works
+        -- retry_url = true  -- TODO: test if this works (it doesn't?)
+        -- downloaded[url] = false
+        -- print(table.show(downloaded))
+        -- check(url)
+        print("Thumbnail for "..item_value.." is pending; redo item once it's finished.")
+        abort_item()
       end
     end
-    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+$") then  -- TODO: why is it sometimes stopping on the OBJ file? (https://t7.rbxcdn.com/30DAY-Avatar-8B080423FACAA7979DC01A7CC5A3170F-Obj)
-      -- check if it's json
+
+    local function check_tr_for_json(text)
       local status, json = pcall(function()
-        return cjson.decode(html)
+        return cjson.decode(text)
       end)
-      
       if status then
+        return json
+      end
+      -- check if gzipped
+      local output = decompress_gzip(text)
+      local status, json = pcall(function()
+        return cjson.decode(output)
+      end)
+      if status then
+        return json
+      end
+      return nil
+    end
+
+    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+$") then
+      -- check if it's a json file
+      json = check_tr_for_json(html)
+      if json ~= nil then
+        -- 3d json example:
         -- "mtl": "180DAY-fa9a8252422e551ee5d44b62f4c6569c",
         -- "obj": "180DAY-961ee508d617cf9d5bdd2ec134e9fa40",
         -- "textures": [
