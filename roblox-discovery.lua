@@ -90,6 +90,8 @@ find_item = function(url)
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
     ["^https?://www%.roblox%.com/games/([0-9]+)$"]="place",
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
+    ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Asc"]="groupwall",
+    ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Desc"]="groupwall",
     ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
     ["^https?://games%.roblox%.com/v1/games%?universeIds=([0-9]+)$"]="universe",  -- TODO: check if %? is right
     ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
@@ -928,9 +930,14 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://groups.roblox.com/v1/featured-content/event?groupId=" .. item_value)  -- TODO: find group with event
       check("https://games.roblox.com/v2/groups/" .. item_value .. "/games?accessFilter=Public&cursor=&limit=50&sortOrder=Desc")
       check("https://apis.roblox.com/community-links/v1/groups/" .. item_value .. "/community")
-      check("https://groups.roblox.com/v2/groups/" .. item_value .. "/wall/posts?cursor=&limit=50&sortOrder=Desc")
       check("https://catalog.roblox.com/v1/search/items?category=All&creatorTargetId=" .. item_value .. "&creatorType=Group&cursor=&limit=50&sortOrder=Desc&sortType=Updated")
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")
+      
+      -- check if group has wall posts
+      -- great, if you request the group wall api too many times it will 429,
+      -- and what seems to last for a very long time...
+      -- check("https://groups.roblox.com/v2/groups/" .. item_value .. "/wall/posts")
+
       -- TODO: thumbnail here
     end
     if string.match(url, "/v1/groups/[0-9]+/name-history$") then
@@ -967,6 +974,20 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       if count > 0 then
         check(increment_param(url, "startRowIndex", "0", json["nextRowIndex"]))
       end
+    end
+    -- group walls
+    if string.match(url, "/v2/groups/[0-9]+/wall/posts$") then  -- wall check
+      json = cjson.decode(html)
+      if not json["errors"] then
+        discover_item(discovered_items, "groupwall:" .. item_value)
+      end
+    end
+    if string.match(url, "/v2/groups/[0-9]+/wall/posts%?sortOrder=") then
+      json = cjson.decode(html)
+      check_cursor(url, json, "nextPageCursor")
+      -- this is the rate limit message:
+      -- {"errors":[{"code":4,"message":"You are posting too fast, please try again in a few minutes."}]}
+      -- what...?
     end
     -- group end --
 
@@ -1062,6 +1083,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
   return urls
 end
 
+-- these urls are for checking purposes
+-- shouldn't be written to warcs as they could
+-- return errors if data is not accessible
+local url_checks = {
+  "/v2/groups/[0-9]+/wall/posts$",  -- wall check
+}
+
 wget.callbacks.write_to_warc = function(url, http_stat)
   status_code = http_stat["statcode"]
   set_item(url["url"])
@@ -1073,6 +1101,11 @@ wget.callbacks.write_to_warc = function(url, http_stat)
     error("No item name found.")
   end
   is_initial_url = false
+  for _, u in pairs(url_checks) do
+    if string.match(url["url"], u) then
+      return false
+    end
+  end
   if http_stat["statcode"] ~= 200
     and http_stat["statcode"] ~= 301
     and http_stat["statcode"] ~= 302
