@@ -431,7 +431,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     html = read_file(file)
 
     -- economy api start --
-    -- rate limit: 1 minute
+    -- rate limit: 1 minute PER request
     -- ... :)
     -- https://economy.roblox.com/v2/assets/94625279904133/details
     -- roblox-made items can use the assetdelivery api! (for now...?)
