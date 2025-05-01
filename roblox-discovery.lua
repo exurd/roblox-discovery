@@ -84,17 +84,31 @@ find_item = function(url)
   local value = nil
   local type_ = nil
   for pattern, name in pairs({
-    ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=([0-9]+)$"]="outfit",
+    -- thumbnails --
+    -- 3d --
+    ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=([0-9]+)$"]="outfit_3dthumbs",
+    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-3d%?userId=([0-9]+)$"]="avatar_3dthumbs",
+    ["^https?://thumbnails%.roblox%.com/v1/users/assets%-thumbnail%-3d%?assetId=([0-9]+)$"]="asset_3dthumbs",
+    
+    -- misc --
+    ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
+    ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Bundle$"]="bundle",
+
+    -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
     ["^https?://www%.roblox%.com/games/([0-9]+)$"]="place",
+
+    -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
     ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Asc"]="groupwall",
     ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Desc"]="groupwall",
-    ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
-    ["^https?://games%.roblox%.com/v1/games%?universeIds=([0-9]+)$"]="universe",  -- TODO: check if %? is right
-    ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
+
+    -- games --
+    ["^https?://games%.roblox%.com/v1/games%?universeIds=([0-9]+)$"]="universe",
+
+    -- assetdel --
     ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)$"]="asset",  -- for discovering how many versions (asset:16688968)
     ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+/version/[0-9]+)$"]="assetver"  -- for archiving  (assetver:16688968_0)
   }) do
@@ -636,8 +650,10 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
+    -- 3d thumbnails --
     if string.match(url, "^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=[0-9]+$")
-    or string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-3d%?assetId=[0-9]+$") then
+    or string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-3d%?assetId=[0-9]+$")
+    or string.match(url, "^https?://thumbnails%.roblox%.com/v1/users/avatar%-3d%?userId=[0-9]+$") then
       -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
       -- {"targetId":746767604,"state":"Completed","imageUrl":"https://t0.rbxcdn.com/180DAY-fe81470b075061200d032362af72a6d0","version":"TN3"}
       json = cjson.decode(html)
@@ -815,6 +831,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/primary/role")
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles?includeLocked=true")
 
+      check("https://thumbnails.roblox.com/v1/users/avatar-3d?userId=" .. item_value)
     end
 
     -- {"canView":false}
