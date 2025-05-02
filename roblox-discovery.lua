@@ -675,7 +675,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         return json
       end
       -- check if gzipped
-      local output = decompress_gzip(text)
+      local output = decompress_gzip(file)
       local status, json = pcall(function()
         return cjson.decode(output)
       end)
