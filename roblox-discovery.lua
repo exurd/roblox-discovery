@@ -93,12 +93,11 @@ find_item = function(url)
     -- misc --
     ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
-    ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Bundle$"]="bundle",
+    ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
 
     -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
-    ["^https?://www%.roblox%.com/games/([0-9]+)$"]="place",
 
     -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
@@ -106,6 +105,7 @@ find_item = function(url)
     ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Desc"]="groupwall",
 
     -- games --
+    ["^https?://www%.roblox%.com/games/([0-9]+)$"]="place",
     ["^https?://games%.roblox%.com/v1/games%?universeIds=([0-9]+)$"]="universe",
 
     -- assetdel --
@@ -452,11 +452,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     and (status_code < 300 or status_code == 302) then
     html = read_file(file)
 
+
     -- economy api start --
     -- rate limit: 1 minute PER request
     -- ... :)
     -- https://economy.roblox.com/v2/assets/94625279904133/details
     -- roblox-made items can use the assetdelivery api! (for now...?)
+    -- TODO: deal with resale data api (https://economy.roblox.com/v1/assets/1149615185/resale-data)
     if string.match(url, "^https?://economy%.roblox%.com/v2/assets/[0-9]+/details$") then
       json = cjson.decode(html)
       if json["IconImageAssetId"] ~= 0 then
@@ -487,6 +489,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
 
     -- economy api start --
+
 
     -- assetdelivery start --
 
@@ -658,6 +661,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
+
     -- 3d thumbnails --
     if string.match(url, "^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=[0-9]+$")
     or string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-3d%?assetId=[0-9]+$")
@@ -670,10 +674,12 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         -- downloaded[url] = false
         -- print(table.show(downloaded))
         -- check(url)
+        -- TODO: it would be 10x better if we can retry the request instead of aborting
         print("Thumbnail for "..item_value.." is pending; redo item once it's finished.")
         abort_item()
       end
     end
+
 
     local function check_tr_for_json(text)
       local status, json = pcall(function()
@@ -713,6 +719,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- thumbnails api end --
 
 
+    -- direct file (sc*) start --
     if string.match(url, "^https?://sc[0-9].rbxcdn.com/[a-z0-9]+?__token__") then
       -- binary: `<roblox!` to `</roblox>`
       -- xml: `<roblox ` to `</roblox>`
@@ -733,6 +740,24 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
     -- direct file (sc*) end --
 
+
+    -- creator assets start --
+    -- TODO: implement these urls into this code
+    -- need to figure out how to detect creator assets
+
+    -- create.roblox.com does not contain any html metadata inside these two urls:
+    -- https://create.roblox.com/store/asset/7683665798/Cartola-Do-Magico
+    -- https://create.roblox.com/store/asset/7683665798/Cartola-Do-Magico/reviews
+
+    -- https://apis.roblox.com/toolbox-service/v1/items/details?assetIds=6692623062
+    -- https://catalog.roblox.com/v1/favorites/assets/6692623062/count
+    -- https://apis.roblox.com/asset-reviews-api/v1/assets/6692623062/comments/count
+    -- https://apis.roblox.com/asset-reviews-api/v1/assets/857927023/comments?limit=100  -- seems to be no limit?
+    -- https://publish.roblox.com/v1/assets/857927023/media
+
+    -- creator assets end --
+
+
     -- catalog and bundles start --
     if string.match(url, "^https?://catalog%.roblox%.com/v1/catalog/items/[0-9]+/details%?itemType=Asset$") then
       check("https://catalog.roblox.com/v1/catalog/items/".. item_value .."/details?itemType=asset")  -- website's webpack and .js script have two different api requests, one being lower case and the other Sentence case...
@@ -745,7 +770,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://catalog.roblox.com/v2/recommendations/assets?assetId=" .. item_value .. "&assetTypeId=".. tostring(json["assetType"]) .."&numItems=7")
       check("https://catalog.roblox.com/v2/recommendations/assets?assetId=" .. item_value .. "&assetTypeId=".. tostring(json["assetType"]) .."&numItems=50")
       -- get 3d thumbnail
-      check("https://thumbnails.roblox.com/v1/assets-thumbnail-3d?assetId=" .. item_value)
+      discover_item(discovered_items, "asset_3dthumbs:" .. tostring(item_value))
     end
     if string.match(url, "^https?://catalog%.roblox%.com/v1/catalog/items/[0-9]+/details%?itemType=Bundle$") then
       -- TODO: deal with `"collectibleItemId": "a109ad8b-7c6b-49bc-914b-f7712da5f53e",` in json
@@ -813,18 +838,18 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/count")
 
       -- current friend limit: 1,000 (not a huge limit yet so should be fine to do in user:)
-      -- discover_item(discovered_items, "user:" .. tostring(item_value) .. ":friends")
+      -- discover_item(discovered_items, "user_friends:" .. tostring(item_value))
       -- check("https://www.roblox.com/users/" .. item_value .. "/friends")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/find?limit=50")
 
-      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":followers")
+      discover_item(discovered_items, "user_followers:" .. tostring(item_value))
       -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=100")
-      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":following")
+      discover_item(discovered_items, "user_following:" .. tostring(item_value))
       -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=100")
 
       -- games
       -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
-      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":games")
+      discover_item(discovered_items, "user_games:" .. tostring(item_value))
 
       -- avatar
       check("https://avatar.roblox.com/v1/users/" .. item_value .. "/currently-wearing")
@@ -841,9 +866,10 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       -- favorites
       -- unknown if banned accounts keep their favorites?
-      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":favorites")  -- public regardless of inventory
+      discover_item(discovered_items, "user_favorites:" .. tostring(item_value))  -- public regardless of inventory
       -- https://games.roblox.com/v2/users/ID/favorite/games?cursor=&limit=100&sortOrder=Desc
       -- check("https://www.roblox.com/users/" .. item_value .. "/favorites")
+      discover_item(discovered_items, "avatar_3dthumbs:" .. tostring(item_value))
     end
 
     -- {"canView":false}
@@ -852,9 +878,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
       print(json["canView"])
       if json["canView"] == true then  -- TODO: TEST THIS PART
-        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":inventory")
-        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":bundles")
-        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":gamepasses")
+        discover_item(discovered_items, "user_inventory:" .. tostring(item_value))
+        discover_item(discovered_items, "user_bundles" .. tostring(item_value))
+        discover_item(discovered_items, "user_gamepasses:" .. tostring(item_value))
       end
     end
 
@@ -864,7 +890,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://badges%.roblox%.com/v1/users/[0-9]+/badges$") then
       json = cjson.decode(html)
       if json["data"] ~= {} then
-        discover_item(discovered_items, "user:" .. tostring(item_value) .. ":badges")
+        discover_item(discovered_items, "user_badges:" .. tostring(item_value))
       end
     end
 
@@ -976,7 +1002,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "/v1/groups/[0-9]+/roles$") then
       json = cjson.decode(html)
       for _, role in pairs(json["roles"]) do  -- TODO: TEST
-        discover_item(discovered_items, "group:" .. tostring(json["groupId"]) .. ":role:" .. tostring(role["id"]))
+        discover_item(discovered_items, "group_role:" .. tostring(json["groupId"]) .. ":" .. tostring(role["id"]))
       end
     end
     if string.match(url, "/v1/groups/[0-9]+/roles/[0-9]+/users%?") then  -- group:*:role:*
@@ -1020,6 +1046,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
     -- group end --
 
+
     -- badges start --
     if string.match(url, "^https?://badges%.roblox%.com/v1/badges/[0-9]+$") then
       json = cjson.decode(html)
@@ -1033,26 +1060,29 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       check("https://www.roblox.com/badges/" .. item_value)
       check("https://web.roblox.com/badges/" .. item_value)
-      discover_item(discovered_items, "thumbnail:" .. tostring(item_value) .. ":badge")
+      discover_item(discovered_items, "thumbnail_badge:" .. tostring(item_value))
       if tonumber(item_value) < 2124421087 then
         -- badges below this number were part of the asset types
         -- check asset apis and thumbnail api
         check("https://catalog.roblox.com/v1/favorites/assets/"..item_value.."/count")
         discover_item(discovered_items, "economy:" .. tostring(item_value))
-        discover_item(discovered_items, "thumbnail:" .. tostring(item_value)..":asset")
+        discover_item(discovered_items, "thumbnail_asset:" .. tostring(item_value))
       end
     end
     -- badges end --
 
+
     -- places start --
+    -- TODO: urls to add:
+    -- https://www.roblox.com/games/getgamepassesinnerpartial?startIndex=0&maxRows=50&placeId=8737899170
+
     if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+/[0-9a-zA-Z-]+$") then
       check("https://web.roblox.com/games/" .. item_value)
       check("https://www.roblox.com/games/votingservice/" .. item_value)
       check("https://apis.roblox.com/universes/v1/places/"..item_value.."/universe")  -- universe: item
 
-      -- TODO: https://www.roblox.com/games/getgamepassesinnerpartial?startIndex=0&maxRows=50&placeId=8737899170
       discover_item(discovered_items, "economy:" .. tostring(item_value))
-      discover_item(discovered_items, "thumbnail:" .. tostring(item_value)..":place")
+      discover_item(discovered_items, "thumbnail_place:" .. tostring(item_value))
     end
 
     if string.match(url, "^https?://apis%.roblox%.com/universes/v1/places/[0-9]+/universe$") then
@@ -1062,16 +1092,28 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
     -- places end --
 
+
+    -- gamepasses start --
+    -- TODO: implement
+    -- https://www.roblox.com/game-pass/205379487/Lucky
+    -- https://apis.roblox.com/game-passes/v1/game-passes/205379487/product-info
+    -- https://thumbnails.roblox.com/v1/game-passes?gamePassIds=1&size=150x150&format=Png&isCircular=false
+    -- gamepasses end
+
+
     -- universes start --
+
+    -- TODO: urls to add:
+    -- https://apis.roblox.com/developer-products/v1/universes/7360842628/developerproducts?pageNumber=1&pageSize=50
+    -- https://badges.roblox.com/v1/universes/7006259506/badges?limit=100&sortOrder=Asc  -- unibadges: item
+
     if string.match(url, "^https?://games%.roblox%.com/v1/games%?universeIds=[0-9]+$") then
       check("https://www.roblox.com/games/badges-section/" .. item_value)
       check("https://web.roblox.com/games/badges-section/" .. item_value)
       check("https://games.roblox.com/v1/games/recommendations/game/" .. item_value .. "?maxRows=6")
       check("https://apis.roblox.com/asset-text-filter-settings/public/universe/" .. item_value)
-      check("https://apis.roblox.com/asset-text-filter-settings/public/universe/" .. item_value)
 
-      discover_item(discovered_items, "universe:" .. tostring(item_value) .. ":badges")
-      -- TODO: https://badges.roblox.com/v1/universes/7006259506/badges?limit=100&sortOrder=Asc  -- unibadges: item
+      discover_item(discovered_items, "unibadges:" .. tostring(item_value))
     end
     -- universes end --
 
