@@ -793,51 +793,57 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     -- user start --
     if string.match(url, "^https?://users%.roblox%.com/v1/users/[0-9]+$") then
-      check("https://www.roblox.com/users/" .. item_value)
-      check("https://web.roblox.com/users/" .. item_value)
-      check("https://users.roblox.com/v1/users/" .. item_value)
-      check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
+      json = cjson.decode(html)
+      if json["isBanned"] ~= true then
+        check("https://www.roblox.com/users/" .. item_value)
+        check("https://web.roblox.com/users/" .. item_value)
 
-      -- user profile showcase items
-      check("https://apis.roblox.com/showcases-api/v1/users/profile/playerassets-json?assetTypeId=10&userId=" .. item_value)
-      check("https://apis.roblox.com/showcases-api/v1/users/profile/playerassets-json?assetTypeId=11&userId=" .. item_value)
+        -- user profile showcase items
+        check("https://apis.roblox.com/showcases-api/v1/users/profile/playerassets-json?assetTypeId=10&userId=" .. item_value)
+        check("https://apis.roblox.com/showcases-api/v1/users/profile/playerassets-json?assetTypeId=11&userId=" .. item_value)
 
-      -- inventory check (rate limited)
-      check("https://inventory.roblox.com/v1/users/" .. item_value .. "/can-view-inventory")
-
-      -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
-
-      check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles")
-      check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/count")
-
-      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings/count")
-      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers/count")
-
-      check("https://avatar.roblox.com/v1/users/" .. item_value .. "/currently-wearing")
-
-
-      -- check if user has any player badges (NOT THE ACTUAL BADGE INVENTORY GRAB)
-      check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges")
-
-
+        -- inventory check (rate limited)
+        check("https://inventory.roblox.com/v1/users/" .. item_value .. "/can-view-inventory")
+      end
       check("https://friends.roblox.com/v1/metadata?targetUserId=" .. item_value)
 
-      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":favorites")  -- public regardless of inventory
-      -- check("https://www.roblox.com/users/" .. item_value .. "/favorites")
-      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":games")
+      -- friends, followers and following
+      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings/count")
+      check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers/count")
+      check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/count")
 
       -- current friend limit: 1,000 (not a huge limit yet so should be fine to do in user:)
       -- discover_item(discovered_items, "user:" .. tostring(item_value) .. ":friends")
-      check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/find?limit=50")
       -- check("https://www.roblox.com/users/" .. item_value .. "/friends")
+      check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/find?limit=50")
 
       discover_item(discovered_items, "user:" .. tostring(item_value) .. ":followers")
+      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=100")
       discover_item(discovered_items, "user:" .. tostring(item_value) .. ":following")
       -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=100")
-      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=100")
 
-      check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/primary/role")
+      -- games
+      -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
+      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":games")
+
+      -- avatar
+      check("https://avatar.roblox.com/v1/users/" .. item_value .. "/currently-wearing")
+
+      -- groups
+      check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles")
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles?includeLocked=true")
+      check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/primary/role")
+
+      -- badges
+      check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
+      -- check if user has any player badges (NOT THE ACTUAL BADGE INVENTORY GRAB)
+      check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges")
+
+      -- favorites
+      -- unknown if banned accounts keep their favorites?
+      discover_item(discovered_items, "user:" .. tostring(item_value) .. ":favorites")  -- public regardless of inventory
+      -- https://games.roblox.com/v2/users/ID/favorite/games?cursor=&limit=100&sortOrder=Desc
+      -- check("https://www.roblox.com/users/" .. item_value .. "/favorites")
     end
 
     -- {"canView":false}

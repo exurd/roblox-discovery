@@ -135,6 +135,7 @@ urls = [
     # users
     "https://users.roblox.com/v1/users/1",  # roblox official account
     "https://users.roblox.com/v1/users/100",  # banned user
+    "https://users.roblox.com/v1/users/365193",  # banned user w/ more stuff
     "https://users.roblox.com/v1/users/29666286",  # account with open inventory
 
     # groups
