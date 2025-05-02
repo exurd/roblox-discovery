@@ -137,10 +137,36 @@ urls = [
     "https://users.roblox.com/v1/users/100",  # banned user
     "https://users.roblox.com/v1/users/365193",  # banned user w/ more stuff
     "https://users.roblox.com/v1/users/29666286",  # account with open inventory
+    "https://users.roblox.com/v1/users/20005",  # account with private inventory
+
+    # places
+    "https://www.roblox.com/games/1818",  # crossroads (roblox owned)
+    "https://www.roblox.com/games/920587237",  # adopt me
 
     # groups
     "https://groups.roblox.com/v1/groups/1",  # group
     "https://groups.roblox.com/v1/groups/4285658",  # locked group
+
+    # badges
+    "https://badges.roblox.com/v1/badges/14417332",  # badge (as asset type)
+    "https://badges.roblox.com/v1/badges/2124421090",  # badge (as badge type)
+
+    # catalog
+    "https://catalog.roblox.com/v1/catalog/items/15837813902/details?itemType=Asset",
+
+    # bundles
+    "https://catalog.roblox.com/v1/catalog/items/2738/details?itemType=Bundle",
+
+    # economy api (rate limit of one request per minute)
+    "https://economy.roblox.com/v2/assets/1818/details",  # place
+    "https://economy.roblox.com/v2/assets/14417332/details",  # badge
+    "https://economy.roblox.com/v2/assets/21117259/details",  # model
+
+    # 3d thumbnails
+    "https://thumbnails.roblox.com/v1/users/avatar-3d?userId=1",  # user outfit
+    "https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=18176448538",  # bundle outfit
+    "https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=1",  # outfit id 1
+    "https://thumbnails.roblox.com/v1/assets-thumbnail-3d?assetId=746767604",  # asset thumbnail
 ]
 if __name__ == "__main__":
     for u in urls:
