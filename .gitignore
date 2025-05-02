@@ -15,6 +15,11 @@ test.warc.zst
 test.warc.gz
 _bad-items.txt
 
+# for test.py
+wget_TESTING.tmp
+wget_TESTING.log
+TESTING.warc.gz
+
 # Added by cargo
 debug/
 target/
