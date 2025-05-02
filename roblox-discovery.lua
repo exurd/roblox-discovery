@@ -838,8 +838,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/primary/role")
       check("https://groups.roblox.com/v1/users/" .. item_value .. "/groups/roles?includeLocked=true")
-
-      check("https://thumbnails.roblox.com/v1/users/avatar-3d?userId=" .. item_value)
     end
 
     -- {"canView":false}
