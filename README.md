@@ -5,7 +5,7 @@ This is for considering a long term project using the [ArchiveTeam Warrior and T
 
 This project was initally created in response to the Asset Delivery API [becoming unavailable to unauthenticated users](https://devforum.roblox.com/t/creator-action-required-new-asset-delivery-api-endpoints-for-community-tools/3574403) with short notice. Grabbing what is available before the upcoming threat of [an asset privacy update](https://devforum.roblox.com/t/creator-action-required-new-asset-delivery-api-endpoints-for-community-tools/3574403/63) is now the project's main goal. The last time a ["privacy update"](https://devforum.roblox.com/t/update-changes-to-asset-privacy-for-audio/1715717) occurred, it caused massive amounts of historical audio to disappear.
 
-The name of this project is due to two reasons; `roblox-grab` was [already taken](https://github.com/ArchiveTeam/roblox-grab), and `-grab` does not inform on what the focus of this project is (maybe `discover-grab`, but I'm not feeling the vibes from that).
+The name of this project is due to two reasons; `roblox-grab` was [already taken](https://github.com/ArchiveTeam/roblox-grab), and `roblox-metadata-grab` doesn't really inform on what the focus of this repo is. TBH, `roblox-discovery-grab` is an okay compromise since `roblox-discovery-items` would need to exist as well.
 
 The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states there are 8 types of IDs:
 
@@ -23,14 +23,14 @@ The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states the
 *Mostly for me, but can be useful for others*
 -   Every asset in the [Roblox Set Archive](https://sets.pizzaboxer.xyz/) (PostgreSQL dump is available.)
 -   Every Roblox-related ID from ArchiveTeam's crawl of the [Roblox Forums](https://archive.org/details/archiveteam_roblox).
-    -   *Don't have access to this, so it would be nice for someone at AT to help out. Just be wary of old Roblox URL tatics...*
+    -   *Don't have access to this, so it would be nice for someone at AT to help out. Just be wary of Roblox's old URL formats...*
 -   Every asset created by the official [Roblox](https://www.roblox.com/users/1/profile) account, such as:
     -   [Catalog items](https://www.roblox.com/catalog?CreatorName=Roblox&IncludeNotForSale)
     -   Creator items like [Models](https://create.roblox.com/store/models?creatorName=Roblox) & [Decals](https://create.roblox.com/store/decals?creatorName=Roblox), etc.
     -   [Games](https://www.roblox.com/users/1/profile#!/creations)
     -   and any edge cases that may appear when checking for the account's inventory.
     -   *Psst, the AssetDelivery API still works on these assets without authentication; just thought you'd wanna know...*
--   The following groups:
+-   The following official Roblox groups:
     -   [Official Group of Roblox](https://www.roblox.com/communities/1200769)
     -   [Roblox Video Stars](https://www.roblox.com/communities/4199740)
     -   [Roblox Interns](https://www.roblox.com/communities/2868472)
@@ -39,7 +39,7 @@ The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states the
 -   All uncopylocked places [listed on the ArchiveTeam Wiki](https://wiki.archiveteam.org/index.php/Roblox/uncopylocked)
 
 
-## Usage, Example and Output
+## Usage
 
 ```zsh
 ➜  ~ docker build -t at-debug -f Dockerfile_debug . --platform=linux/amd64
