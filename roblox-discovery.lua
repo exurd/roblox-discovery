@@ -1,4 +1,5 @@
 -- roblox-discovery.lua
+package.cpath = './externals/?.so;' .. package.cpath
 
 local urlparse = require("socket.url")
 local http = require("socket.http")
@@ -556,7 +557,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         f:write(b)
         f:close()
 
-        local command = "./binary_to_xml < " .. temp
+        local command = "./externals/binary_to_xml < " .. temp
         local output = runcom(command)
         if not string.match(output, "[%s]") then
           error("No output retrieved.")
