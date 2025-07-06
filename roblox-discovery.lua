@@ -491,12 +491,16 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       local command = 'wget -q -S -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0" -O /dev/null "' .. url .. '" 2>&1'
       local output = utils:runcom(command)
 
-      local version_number = output:match("roblox%-assetversionnumber: (%d+)")
+      if output ~= nil then
+        local version_number = output:match("roblox%-assetversionnumber: (%d+)")
 
-      if version_number then
-        for i=0, version_number do
-          discover_item(discovered_items, "assetver:" .. asset_id .. ":" .. i)
+        if version_number then
+          for i = 0, version_number do
+            discover_item(discovered_items, "assetver:" .. asset_id .. ":" .. i)
+          end
         end
+      else
+        error("Output returned nil.")
       end
       check("https://assetdelivery.roblox.com/v1/asset?id="..asset_id)
       output = nil
@@ -538,12 +542,16 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
         local command = "./externals/binary_to_xml < " .. temp
         local output = utils:runcom(command)
-        if not string.match(output, "[%s]") then
-          error("No output retrieved.")
+        if output ~= nil then
+          if not string.match(output, "[%s]") then
+            error("No output retrieved.")
+          end
+          discover_roblox_assets(output)
+          output = nil
+          return true
+        else
+          error("Output returned nil.")
         end
-        discover_roblox_assets(output)
-        output = nil
-        return true
       end
       local c = string.match(content, "{.*}")  -- fonts are contained in a json file
       if c then

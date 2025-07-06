@@ -15,10 +15,12 @@ end
 
 function mod:runcom(command)
   local handle = io.popen(command)
-  local output = handle:read("*a")
-  handle:close()
-  handle = nil
-
+  local output = nil
+  if handle then
+    output = handle:read("*a")
+    handle:close()
+    handle = nil
+  end
   return output
 end
 
