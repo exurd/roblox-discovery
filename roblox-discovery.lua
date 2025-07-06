@@ -73,7 +73,7 @@ end
 
 discover_item = function(target, item)
   if not target[item] then
---print('discovered', item)
+    --print('discovered', item)
     target[item] = true
     return true
   end
@@ -89,7 +89,7 @@ find_item = function(url)
     ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=([0-9]+)$"]="outfit_3dthumbs",
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-3d%?userId=([0-9]+)$"]="avatar_3dthumbs",
     ["^https?://thumbnails%.roblox%.com/v1/users/assets%-thumbnail%-3d%?assetId=([0-9]+)$"]="asset_3dthumbs",
-    
+
     -- misc --
     ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
@@ -212,7 +212,7 @@ allowed = function(url, parenturl)
       return true
     end
   end
-  
+
 
   -- if string.match(url, "^https?://[^/]*roblox.com/(?:[a-z]{2}/)?(?:catalog|bundles|users|groups|communities|badges)/.*$")
   --   or string.match(url, "^https?://creator%.roblox.com/store/asset.*$")  -- https://create.roblox.com/store/asset/53326/Neutral-Spawn-Location
@@ -308,7 +308,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if not processed(url_)
       and not processed(url_ .. "/")
       and allowed(url_, origurl) then
---print('queued', url_)
+      --print('queued', url_)
       table.insert(urls, {
         url=url_
       })
@@ -691,7 +691,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- https://apis.roblox.com/toolbox-service/v1/items/details?assetIds=6692623062
     -- https://catalog.roblox.com/v1/favorites/assets/6692623062/count
     -- https://apis.roblox.com/asset-reviews-api/v1/assets/6692623062/comments/count
-    -- https://apis.roblox.com/asset-reviews-api/v1/assets/857927023/comments?limit=100 
+    -- https://apis.roblox.com/asset-reviews-api/v1/assets/857927023/comments?limit=100
        -- seems to have no limit?
     -- https://publish.roblox.com/v1/assets/857927023/media
 
@@ -728,7 +728,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       check("https://catalog.roblox.com/v2/recommendations/bundles?bundleId=" .. item_value .. "&bundleTypeId=".. tostring(json["bundleType"]) .."&numItems=7")
       check("https://catalog.roblox.com/v2/recommendations/bundles?bundleId=" .. item_value .. "&bundleTypeId=".. tostring(json["bundleType"]) .."&numItems=50")
-      
+
       for _, item in pairs(json["bundledItems"]) do
         local idStr = string.format("%.0f", item["id"])
         if item["type"] == "Asset" then
@@ -927,7 +927,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://apis.roblox.com/community-links/v1/groups/" .. item_value .. "/community")
       check("https://catalog.roblox.com/v1/search/items?category=All&creatorTargetId=" .. item_value .. "&creatorType=Group&cursor=&limit=50&sortOrder=Desc&sortType=Updated")
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")
-      
+
       -- check if group has wall posts
       -- great, if you request the group wall api too many times it will 429,
       -- and what seems to last for a very long time...
