@@ -510,9 +510,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
 
     -- direct file (sc*) start --
-
-    -- TODO: return array of asset ids instead
-    -- so it can be placed into roblox-utils
     local function discover_roblox_assets(content)  -- plain text
       for match in content:gmatch("https?://www%.roblox%.com//?asset/?%?id=(%d+)") do
         discover_item(discovered_items, "asset:" .. match)
