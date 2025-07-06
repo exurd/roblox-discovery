@@ -8,11 +8,6 @@ local zlib = require("zlib")
 local mod = {}
 
 
-function mod:test()
-  print("Hello, world!")
-end
-
-
 function mod:runcom(command)
   local handle = io.popen(command)
   local output = nil
