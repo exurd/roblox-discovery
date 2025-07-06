@@ -165,7 +165,8 @@ allowed = function(url, parenturl)
     or string.match(url, "^https?://[^/]+/abusereport/")
     or string.match(url, "^https?://[^/]+/[a-z][a-z]/abusereport/")
     or string.match(url, "^https://apis%.roblox%.com/voting%-api/vote/asset/[0-9]+%?vote=")
-    -- we want the translated infomation/websites as creators can add their own translations
+    -- we want the translated infomation/websites as creators
+    -- can add their own translations
     -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
     -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/users/")
     -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/groups/")
@@ -191,7 +192,9 @@ allowed = function(url, parenturl)
     -- https://tr.rbxcdn.com/180DAY-4ab2f5dd6264a34f6fe7d898324bb244/700/700/Head/Png/noFilter
     -- https://tr.rbxcdn.com/%E2%AC%A7q%DE(%CEo  (???)
     -- https://tr.rbxcdn.com/180DAY-be8a76bdad030dc3dbe3a3d591197140/420/420/Image/Png/%90%E0%A8%88%B0w%8E%B7P%A1%CF]Z%5C%E2%08%D6gY%ADz%15Sc  (??????)
-    -- the problem is that i don't know how many different *real* tr.rbxcdn urls out there (/image, /head, /food, /animal, /mineral, /fakecategoryhere, etc.)
+
+    -- the problem is that i don't know how many different *real* tr.rbxcdn
+    -- urls out there (/image, /head, /food, /animal, /mineral, /fakecategoryhere, etc.)
     if string.match(url, "^https?://tr%.rbxcdn%.com/[0-9]+DAY-[0-9a-z-A-Z-]+/")
 
     -- t* --
@@ -200,6 +203,7 @@ allowed = function(url, parenturl)
     -- https://t6.rbxcdn.com/30DAY-2cd469e44d5116ac3730244ab4788866
     -- https://t5.rbxcdn.com/30DAY-f5ee2e1490b12540925eab8fc395f455
     -- https://t7.rbxcdn.com/30DAY-Avatar-9BE806212999C241B01FCD59757FBA0F-Obj
+
     -- i *really* wanted to avoid hardcoding the *DAY letters in,
     -- as it could backfire if roblox decides to use `126DAY-` or `29DAY-` in the urls...
     -- however, false positives keep coming through and i had enough of them
@@ -682,7 +686,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- https://apis.roblox.com/toolbox-service/v1/items/details?assetIds=6692623062
     -- https://catalog.roblox.com/v1/favorites/assets/6692623062/count
     -- https://apis.roblox.com/asset-reviews-api/v1/assets/6692623062/comments/count
-    -- https://apis.roblox.com/asset-reviews-api/v1/assets/857927023/comments?limit=100  -- seems to be no limit?
+    -- https://apis.roblox.com/asset-reviews-api/v1/assets/857927023/comments?limit=100 
+       -- seems to have no limit?
     -- https://publish.roblox.com/v1/assets/857927023/media
 
     -- creator assets end --
