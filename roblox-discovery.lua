@@ -1,5 +1,4 @@
 -- roblox-discovery.lua
-package.cpath = './externals/?.so;' .. package.cpath
 
 local urlparse = require("socket.url")
 local http = require("socket.http")
@@ -9,7 +8,7 @@ local utf8 = require("utf8")
 local base64 = require("base64")
 local ltn12 = require("ltn12")
 
-local zlib = require("zlib")
+local utils = require("externals.roblox-utils")
 
 local item_dir = os.getenv("item_dir")
 local warc_file_base = os.getenv("warc_file_base")
@@ -425,30 +424,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
   end
 
-  local function runcom(command)
-    local handle = io.popen(command)
-    local output = handle:read("*a")
-    handle:close()
-    handle = nil
-
-    return output
-  end
-
-  local function decompress_gzip(file)
-    local status, output = pcall(function()
-      local f = assert(io.open(file, "rb"))
-      local compressed_data = f:read("*all")
-      f:close()
-
-      local stream = zlib.inflate()
-      local output, eof, bytes_in, bytes_out = stream(compressed_data)
-      return output
-    end)
-    if status then
-      return output
-    end
-  end
-
   if allowed(url)
     and (status_code < 300 or status_code == 302) then
     html = read_file(file)
@@ -531,6 +506,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
 
     -- direct file (sc*) start --
+
+    -- TODO: return array of asset ids instead
+    -- so it can be placed into roblox-utils
     local function discover_roblox_assets(content)  -- plain text
       for match in content:gmatch("https?://www%.roblox%.com//?asset/?%?id=(%d+)") do
         discover_item(discovered_items, "asset:" .. match)
@@ -558,7 +536,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         f:close()
 
         local command = "./externals/binary_to_xml < " .. temp
-        local output = runcom(command)
+        local output = utils:runcom(command)
         if not string.match(output, "[%s]") then
           error("No output retrieved.")
         end
@@ -571,36 +549,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_roblox_assets(c)
       end
       return false
-    end
-
-
-    local function xor(a, b)
-      local result = 0
-      local bit_val = 1
-      while a > 0 or b > 0 do
-        local a_bit = a % 2
-        local b_bit = b % 2
-        if a_bit ~= b_bit then
-          result = result + bit_val
-        end
-        a = math.floor(a / 2)
-        b = math.floor(b / 2)
-        bit_val = bit_val * 2
-      end
-      return result
-    end
-
-
-    function get_hash_url(hash)
-      if string.find(hash, "mats%-thumbnails%.roblox%.com") then
-        return hash
-      end
-
-      local st = 31
-      for i = 1, #hash do
-        st = xor(st, string.byte(hash, i))
-      end
-      return string.format("https://t%d.rbxcdn.com/%s", st % 8, hash)
     end
 
 
@@ -681,28 +629,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
-
-    local function check_tr_for_json(text)
-      local status, json = pcall(function()
-        return cjson.decode(text)
-      end)
-      if status then
-        return json
-      end
-      -- check if gzipped
-      local output = decompress_gzip(file)
-      local status, json = pcall(function()
-        return cjson.decode(output)
-      end)
-      if status then
-        return json
-      end
-      return nil
-    end
-
     if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+-Obj$") then
       -- check if it's a json file
-      json = check_tr_for_json(html)
+      json = utils:check_tr_for_json(html, file)
       if json ~= nil then
         -- 3d json example:
         -- "mtl": "180DAY-fa9a8252422e551ee5d44b62f4c6569c",
@@ -710,10 +639,10 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         -- "textures": [
         --     "180DAY-e49efe685ca4dbbc3bc89af1a912f7dc"
         -- ]
-        check(get_hash_url(tostring(json["mtl"])))
-        check(get_hash_url(tostring(json["obj"])))
+        check(utils:get_hash_url(tostring(json["mtl"])))
+        check(utils:get_hash_url(tostring(json["obj"])))
         for _, tex in pairs(json["textures"]) do
-          check(get_hash_url(tostring(tex)))
+          check(utils:get_hash_url(tostring(tex)))
         end
       end
     end
@@ -731,7 +660,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         -- hell
 
         -- check if html compressed
-        local output = decompress_gzip(file)
+        local output = utils:decompress_gzip(file)
 
         if not output:match("not in gzip format") then
           check_roblox_type(output)
