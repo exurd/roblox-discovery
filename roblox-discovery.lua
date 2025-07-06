@@ -489,7 +489,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     local asset_id = url:match("/v2/assetId/([0-9]+)$")
     if asset_id then
       local command = 'wget -q -S -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0" -O /dev/null "' .. url .. '" 2>&1'
-      local output = runcom(command)
+      local output = utils:runcom(command)
 
       local version_number = output:match("roblox%-assetversionnumber: (%d+)")
 
