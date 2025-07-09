@@ -205,7 +205,7 @@ allowed = function(url, parenturl)
     -- https://t7.rbxcdn.com/30DAY-Avatar-9BE806212999C241B01FCD59757FBA0F-Obj
 
     -- i *really* wanted to avoid hardcoding the *DAY letters in,
-    -- as it could backfire if roblox decides to use `126DAY-` or `29DAY-` in the urls...
+    -- as it could backfire if roblox decides to use other things in those urls...
     -- however, false positives keep coming through and i had enough of them
     or string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9]+DAY-[0-9a-zA-Z%-]+$")
     or string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+-Obj$") then
