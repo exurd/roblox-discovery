@@ -84,11 +84,25 @@ find_item = function(url)
   local value = nil
   local type_ = nil
   for pattern, name in pairs({
-    -- thumbnails --
-    -- 3d --
+    -- thumbnails, 3d --
     ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=([0-9]+)$"]="outfit_3dthumbs",
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-3d%?userId=([0-9]+)$"]="avatar_3dthumbs",
     ["^https?://thumbnails%.roblox%.com/v1/users/assets%-thumbnail%-3d%?assetId=([0-9]+)$"]="asset_3dthumbs",
+
+    -- thumbnails, standard --
+    ["^https?://thumbnails%.roblox%.com/v1/users/outfits%?userOutfitIds=([0-9]+)$"]="thumbnail_useroutfit",
+    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%?userIds=([0-9]+)$"]="thumbnail_useravatar",
+    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-bust%?userIds=([0-9]+)$"]="thumbnail_userbust",
+    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-headshot%?userIds=([0-9]+)$"]="thumbnail_userheadshot",
+    ["^https?://thumbnails%.roblox%.com/v1/games/icons%?universeIds=([0-9]+)$"]="thumbnail_universeicon",
+    ["^https?://thumbnails%.roblox%.com/v1/games/multiget%?universeIds=([0-9]+)$"]="thumbnail_universethumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/places/gameicons%?placeIds=([0-9]+)$"]="thumbnail_gameicon",
+    ["^https?://thumbnails%.roblox%.com/v1/groups/icons%?groupIds=([0-9]+)$"]="thumbnail_groupicon",
+    ["^https?://thumbnails%.roblox%.com/v1/bundles/thumbnails%?groupIds=([0-9]+)$"]="thumbnail_bundlethumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/badges/icons%?badgeIds=([0-9]+)$"]="thumbnail_badgesthumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/developer%-products/icons%?developerProductIds=([0-9]+)$"]="thumbnail_devproducticon",
+    ["^https?://thumbnails%.roblox%.com/v1/game%-passes%?gamePassIds=([0-9]+)$"]="thumbnail_gamepass",
+    ["^https?://thumbnails%.roblox%.com/v1/assets%?assetIds=([0-9]+)$"]="thumbnail_asset",
 
     -- misc --
     ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
@@ -564,33 +578,49 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- thumbnails api start --
     local THUMBNAIL_SIZES = {"30x30", "42x42", "50x50", "60x62", "75x75", "110x110", "140x140", "150x150", "160x100", "160x600", "250x250", "256x144", "300x250", "304x166", "384x216", "396x216", "420x420", "480x270", "512x512", "576x324", "700x700", "728x90", "768x432", "1200x80", "330x110", "660x220"}
     local THUMBANIL_FORMAT = {"Png", "Jpeg", "Webp"}
-    local function check_thumbnails(id, prefix)  -- prefix = "users/avatar?userIds="
+    local function check_thumbnails(prefix)  -- prefix = "users/avatar?userIds=[ID]"
+      -- prefixes that use this format:
+      -- users/outfits?userOutfitIds=
+      -- users/avatar?userIds=
+      -- users/avatar-bust?userIds=
+      -- users/avatar-headshot?userIds=
+      -- games/icons?universeIds=
+      -- games/multiget/thumbnails?universeIds=*&countPerUniverse=10&defaults=true
+      -- places/gameicons?placeIds=
+      -- groups/icons?groupIds=
+      -- bundles/thumbnails?bundleIds=
+      -- badges/icons?badgeIds=
+      -- developer-products/icons?developerProductIds=
+      -- game-passes?gamePassIds=
+      -- assets?assetIds=
+
+
       -- user outfit id:
-      -- https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=41789&size=150x150&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=41789&size=150x150&format=Png&isCircular=false
       -- https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=1
 
       -- user id:
-      -- https://thumbnails.roblox.com/v1/users/avatar?userIds=1&size=30x30&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/users/avatar?userIds=1&size=30x30&format=Png&isCircular=false
       -- https://thumbnails.roblox.com/v1/users/avatar-3d?userId=1
-      -- https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=1&size=48x48&format=Png&isCircular=false
-      -- https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=1&size=48x48&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=1&size=48x48&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=1&size=48x48&format=Png&isCircular=false
 
       -- universe id:
-      -- https://thumbnails.roblox.com/v1/games/icons?universeIds=7006259506&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
-      -- https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=7006259506&countPerUniverse=10&defaults=true&size=768x432&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/games/icons?universeIds=7006259506&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=7006259506&countPerUniverse=10&defaults=true&size=768x432&format=Png&isCircular=false
 
       -- place id:
-      -- https://thumbnails.roblox.com/v1/places/gameicons?placeIds=1818&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/places/gameicons?placeIds=1818&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
 
       -- group id:
-      -- https://thumbnails.roblox.com/v1/groups/icons?groupIds=34370120&size=150x150&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/groups/icons?groupIds=34370120&size=150x150&format=Png&isCircular=false
 
       -- bundle id:
-      -- https://thumbnails.roblox.com/v1/bundles/thumbnails?bundleIds=2738&size=150x150&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/bundles/thumbnails?bundleIds=2738&size=150x150&format=Png&isCircular=false
       -- https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=18176448538
 
       -- badge id:
-      -- https://thumbnails.roblox.com/v1/badges/icons?badgeIds=3553892029567363&size=150x150&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/badges/icons?badgeIds=3553892029567363&size=150x150&format=Png&isCircular=false
 
       -- catalog assets:
       -- https://thumbnails.roblox.com/v1/assets-thumbnail-3d?assetId=746767604
@@ -599,26 +629,43 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955
 
       -- developer product id:
-      -- https://thumbnails.roblox.com/v1/developer-products/icons?developerProductIds=120&size=150x150&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/developer-products/icons?developerProductIds=120&size=150x150&format=Png&isCircular=false
 
       -- gamepass id:
-      -- https://thumbnails.roblox.com/v1/game-passes?gamePassIds=1&size=150x150&format=Png&isCircular=false
+        -- https://thumbnails.roblox.com/v1/game-passes?gamePassIds=1&size=150x150&format=Png&isCircular=false
 
       -- asset id:
-      -- https://thumbnails.roblox.com/v1/assets?assetIds=746767604&format=png&isCircular=false&size=150x150
+        -- https://thumbnails.roblox.com/v1/assets?assetIds=746767604&format=png&isCircular=false&size=150x150
 
       for _, thmb_format in THUMBANIL_FORMAT do
         for _, thmb_size in THUMBNAIL_SIZES do
-          check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format)
-          check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=false")
+          check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format)
+          check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=false")
           local a, b = thmb_size:match("^(%d+)x(%d+)$")
           if a == b then  -- isCircular
-            check("https://thumbnails.roblox.com/v1/"..prefix..id.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=true")
+            check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=true")
           end
         end
       end
     end
-
+    -- ["^https?://thumbnails%.roblox%.com/v1/users/outfits%?userOutfitIds=([0-9]+)$"]="thumbnail_useroutfit",
+    -- ["^https?://thumbnails%.roblox%.com/v1/users/avatar%?userIds=([0-9]+)$"]="thumbnail_useravatar",
+    -- ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-bust%?userIds=([0-9]+)$"]="thumbnail_userbust",
+    -- ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-headshot%?userIds=([0-9]+)$"]="thumbnail_userheadshot",
+    -- ["^https?://thumbnails%.roblox%.com/v1/games/icons%?universeIds=([0-9]+)$"]="thumbnail_universeicon",
+    -- ["^https?://thumbnails%.roblox%.com/v1/games/multiget%?universeIds=([0-9]+)$"]="thumbnail_universethumbnail",
+    -- ["^https?://thumbnails%.roblox%.com/v1/places/gameicons%?placeIds=([0-9]+)$"]="thumbnail_gameicon",
+    -- ["^https?://thumbnails%.roblox%.com/v1/groups/icons%?groupIds=([0-9]+)$"]="thumbnail_groupicon",
+    -- ["^https?://thumbnails%.roblox%.com/v1/bundles/thumbnails%?groupIds=([0-9]+)$"]="thumbnail_bundlethumbnail",
+    -- ["^https?://thumbnails%.roblox%.com/v1/badges/icons%?badgeIds=([0-9]+)$"]="thumbnail_bundlethumbnail",
+    -- ["^https?://thumbnails%.roblox%.com/v1/developer%-products/icons%?developerProductIds=([0-9]+)$"]="thumbnail_devproducticon",
+    -- ["^https?://thumbnails%.roblox%.com/v1/game%-passes%?gamePassIds=([0-9]+)$"]="thumbnail_gamepass",
+    -- ["^https?://thumbnails%.roblox%.com/v1/assets%?assetIds=([0-9]+)$"]="thumbnail_asset",
+    -- TODO: not working; http 400 and it stops...
+    local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-]+)")
+    if prefix_match then
+        check_thumbnails(prefix_match)
+    end
 
     -- 3d thumbnails --
     if string.match(url, "^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=[0-9]+$")
