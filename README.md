@@ -20,7 +20,6 @@ The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states the
 
 
 ## Items that should be considered when creating the `-items` repo
-*Mostly for me, but can be useful for others*
 -   Every asset in the [Roblox Set Archive](https://sets.pizzaboxer.xyz/) (PostgreSQL dump is available.)
 -   Every Roblox-related ID from ArchiveTeam's crawl of the [Roblox Forums](https://archive.org/details/archiveteam_roblox).
     -   *Don't have access to this, so it would be nice for someone at AT to help out. Just be wary of Roblox's old URL formats...*
@@ -29,7 +28,7 @@ The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states the
     -   Creator items like [Models](https://create.roblox.com/store/models?creatorName=Roblox) & [Decals](https://create.roblox.com/store/decals?creatorName=Roblox), etc.
     -   [Games](https://www.roblox.com/users/1/profile#!/creations)
     -   and any edge cases that may appear when checking for the account's inventory.
-    -   *Psst, the AssetDelivery API still works on these assets without authentication; just thought you'd wanna know...*
+    -   (*Psst, the AssetDelivery API still works on these assets without authentication; just thought you'd wanna know...*)
 -   The following official Roblox groups:
     -   [Official Group of Roblox](https://www.roblox.com/communities/1200769)
     -   [Roblox Video Stars](https://www.roblox.com/communities/4199740)
