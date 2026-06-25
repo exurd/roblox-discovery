@@ -169,12 +169,9 @@ urls = [
     "https://thumbnails.roblox.com/v1/badges/icons?badgeIds=3553892029567363",  # badge icon
     "https://thumbnails.roblox.com/v1/developer-products/icons?developerProductIds=120",  # developer product icon
     "https://thumbnails.roblox.com/v1/game-passes?gamePassIds=1",  # gamepasses
-    # todo: figure out placeholders
-    # -- universe id:
-    # -- https://thumbnails.roblox.com/v1/games/icons?universeIds=7006259506&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
-    # -- https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=7006259506&countPerUniverse=10&defaults=true&size=768x432&format=Png&isCircular=false
-    # -- place id:
-    # -- https://thumbnails.roblox.com/v1/places/gameicons?placeIds=1818&returnPolicy=PlaceHolder&size=50x50&format=Png&isCircular=false
+    "https://thumbnails.roblox.com/v1/games/icons?universeIds=7006259506",  # universe icons
+    "https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=7006259506",  # universe thumbnails
+    "https://thumbnails.roblox.com/v1/places/gameicons?placeIds=1818",  # game icon
 
     # animated thumbnail
     "https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955",

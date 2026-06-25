@@ -93,7 +93,7 @@ find_item = function(url)
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-bust%?userIds=([0-9]+)$"]="thumbnail_userbust",
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-headshot%?userIds=([0-9]+)$"]="thumbnail_userheadshot",
     ["^https?://thumbnails%.roblox%.com/v1/games/icons%?universeIds=([0-9]+)$"]="thumbnail_universeicon",
-    ["^https?://thumbnails%.roblox%.com/v1/games/multiget%?universeIds=([0-9]+)$"]="thumbnail_universethumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/games/multiget/thumbnails%?universeIds=([0-9]+)$"]="thumbnail_universethumbnail",
     ["^https?://thumbnails%.roblox%.com/v1/places/gameicons%?placeIds=([0-9]+)$"]="thumbnail_gameicon",
     ["^https?://thumbnails%.roblox%.com/v1/groups/icons%?groupIds=([0-9]+)$"]="thumbnail_groupicon",
     ["^https?://thumbnails%.roblox%.com/v1/bundles/thumbnails%?bundleIds=([0-9]+)$"]="thumbnail_bundle",
@@ -473,10 +473,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       thumbnail_bundle = true,
       thumbnail_badge = true,  -- this is 150x150 only, but slim'll do
       thumbnail_gamepass = true,  -- this one too
-      thumbnail_devproducticon = true
+      thumbnail_devproducticon = true,
+      thumbnail_universeicon = true,
+      thumbnail_gameicon = true
     }
-    local THUMBNAIL_SIZES_SLIM = {"420x420", "250x250", "150x150", "140x140", "110x110",
-                                  "75x75", "50x50", "30x30"}
+    local THUMBNAIL_SIZES_SLIM = {"512x512", "420x420", "250x250", "150x150", "140x140",
+                                  "110x110", "75x75", "50x50", "30x30"}
+    local THUMBNAIL_SIZES_UNI = {"768x432", "576x324", "480x270", "384x216", "256x144"}
     local THUMBNAIL_FORMATS = {"Png", "Jpeg", "Webp"}
 
     local function check_thumbnails(prefix)  -- prefix = "users/avatar?userIds=[ID]"
@@ -486,6 +489,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       thumbnail_type = thumbnail_type["type"]
       if SLIM_ITEMS[thumbnail_type] ~= nil then
         sizes = THUMBNAIL_SIZES_SLIM
+      end
+      if thumbnail_type == "thumbnail_universethumbnail" then
+        sizes = THUMBNAIL_SIZES_UNI
       end
 
       for _, thmb_format in pairs(THUMBNAIL_FORMATS) do
