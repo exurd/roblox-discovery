@@ -162,12 +162,6 @@ urls = [
     "https://economy.roblox.com/v2/assets/1818/details",  # place
     "https://economy.roblox.com/v2/assets/14417332/details",  # badge
     "https://economy.roblox.com/v2/assets/21117259/details",  # model
-
-    # 3d thumbnails
-    "https://thumbnails.roblox.com/v1/users/avatar-3d?userId=1",  # user outfit
-    "https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=18176448538",  # bundle outfit
-    "https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=1",  # outfit id 1
-    "https://thumbnails.roblox.com/v1/assets-thumbnail-3d?assetId=746767604",  # asset thumbnail
 ]
 if __name__ == "__main__":
     for u in urls:

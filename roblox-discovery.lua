@@ -84,11 +84,6 @@ find_item = function(url)
   local value = nil
   local type_ = nil
   for pattern, name in pairs({
-    -- thumbnails, 3d --
-    ["^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=([0-9]+)$"]="outfit_3dthumbs",
-    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-3d%?userId=([0-9]+)$"]="avatar_3dthumbs",
-    ["^https?://thumbnails%.roblox%.com/v1/users/assets%-thumbnail%-3d%?assetId=([0-9]+)$"]="asset_3dthumbs",
-
     -- thumbnails, standard --
     ["^https?://thumbnails%.roblox%.com/v1/users/outfits%?userOutfitIds=([0-9]+)$"]="thumbnail_useroutfit",
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%?userIds=([0-9]+)$"]="thumbnail_useravatar",
@@ -597,11 +592,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       -- user outfit id:
         -- https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=41789&size=150x150&format=Png&isCircular=false
-      -- https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=1
 
       -- user id:
         -- https://thumbnails.roblox.com/v1/users/avatar?userIds=1&size=30x30&format=Png&isCircular=false
-      -- https://thumbnails.roblox.com/v1/users/avatar-3d?userId=1
         -- https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=1&size=48x48&format=Png&isCircular=false
         -- https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=1&size=48x48&format=Png&isCircular=false
 
@@ -617,13 +610,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       -- bundle id:
         -- https://thumbnails.roblox.com/v1/bundles/thumbnails?bundleIds=2738&size=150x150&format=Png&isCircular=false
-      -- https://thumbnails.roblox.com/v1/users/outfit-3d?outfitId=18176448538
 
       -- badge id:
         -- https://thumbnails.roblox.com/v1/badges/icons?badgeIds=3553892029567363&size=150x150&format=Png&isCircular=false
-
-      -- catalog assets:
-      -- https://thumbnails.roblox.com/v1/assets-thumbnail-3d?assetId=746767604
 
       -- catalog(?) animation asset:
       -- https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955
@@ -668,9 +657,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
 
     -- 3d thumbnails --
-    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/users/outfit%-3d%?outfitId=[0-9]+$")
-    or string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-3d%?assetId=[0-9]+$")
-    or string.match(url, "^https?://thumbnails%.roblox%.com/v1/users/avatar%-3d%?userId=[0-9]+$") then
+    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-animated%?assetId=[0-9]+$") then
       -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
       -- {"targetId":746767604,"state":"Completed","imageUrl":"https://t0.rbxcdn.com/180DAY-fe81470b075061200d032362af72a6d0","version":"TN3"}
       json = cjson.decode(html)
@@ -680,12 +667,12 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         -- print(table.show(downloaded))
         -- check(url)
         -- TODO: it would be 10x better if we can retry the request instead of aborting
-        print("Thumbnail for "..item_value.." is pending; redo item once it's finished.")
-        abort_item()
+        print("Thumbnail for "..item_value.." is pending...")
+        retry_url = true
       end
     end
 
-    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+-Obj$") then
+    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+$") then
       -- check if it's a json file
       json = utils:check_tr_for_json(html, file)
       if json ~= nil then
