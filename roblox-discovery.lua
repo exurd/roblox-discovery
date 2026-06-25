@@ -945,19 +945,20 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     -- group start --
     if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+$") then
+      json = cjson.decode(html)
+      if json["isLocked"] ~= true then
+        check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")  -- nextrowindex(? interesting)
+        check("https://groups.roblox.com/v1/groups/" .. item_value .. "/name-history")  -- TODO: pagecursor
+      end
       check("https://www.roblox.com/groups/" .. item_value)
       check("https://web.roblox.com/groups/" .. item_value)
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/roles")
-      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership")
-      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership?includeNotificationPreferences=true")
-      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/name-history")  -- TODO: pagecursor
-      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")  -- nextrowindex(? interesting)
+      -- check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership")
+      -- check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership?includeNotificationPreferences=true")
       check("https://groups.roblox.com/v1/featured-content/event?groupId=" .. item_value)  -- TODO: find group with event
       check("https://games.roblox.com/v2/groups/" .. item_value .. "/games?accessFilter=Public&cursor=&limit=50&sortOrder=Desc")
       check("https://apis.roblox.com/community-links/v1/groups/" .. item_value .. "/community")
       check("https://catalog.roblox.com/v1/search/items?category=All&creatorTargetId=" .. item_value .. "&creatorType=Group&cursor=&limit=50&sortOrder=Desc&sortType=Updated")
-      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")
-
       -- check if group has wall posts
       -- great, if you request the group wall api too many times it will 429,
       -- and what seems to last for a very long time...
