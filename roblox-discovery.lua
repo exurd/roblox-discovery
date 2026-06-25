@@ -1215,6 +1215,12 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
     return wget.actions.NOTHING
   end
 
+  -- friends returns 403 if specified user is in the uk
+  if string.match(url["url"], "friends%.roblox%.com/v1/users/[0-9]+/friends/find")
+    and status_code == 403 then
+    return wget.actions.NOTHING
+  end
+
   if status_code == 0 or retry_url then
     io.stdout:write("Server returned bad response. ")
     io.stdout:flush()
