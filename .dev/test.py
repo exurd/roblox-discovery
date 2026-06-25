@@ -158,13 +158,13 @@ urls = [
     # bundles
     "https://catalog.roblox.com/v1/catalog/items/2738/details?itemType=Bundle",
 
+    # animated thumbnail
+    "https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955",
+
     # economy api (rate limit of one request per minute)
     "https://economy.roblox.com/v2/assets/1818/details",  # place
     "https://economy.roblox.com/v2/assets/14417332/details",  # badge
     "https://economy.roblox.com/v2/assets/21117259/details",  # model
-
-    # animated thumbnail
-    "https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955",
 ]
 if __name__ == "__main__":
     for u in urls:
