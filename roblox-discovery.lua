@@ -1209,8 +1209,8 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
     return wget.actions.EXIT
   end
 
-  -- inventory returns 404 if user hides them
-  if string.match(url["url"], "/users/[0-9]+/inventory?/$")
+  -- inventory can return 404 on some users
+  if string.match(url["url"], "roblox%.com/users/[0-9]+/inventory?/$")
     and status_code == 404 then
     return wget.actions.NOTHING
   end
