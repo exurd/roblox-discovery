@@ -477,7 +477,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
-    -- economy api start --
+    -- economy api end --
 
 
     -- assetdelivery start --
