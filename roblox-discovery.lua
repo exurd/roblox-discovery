@@ -110,6 +110,7 @@ find_item = function(url)
 
     -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
+    ["^https?://badges%.roblox%.com/v1/users/([0-9]+)/badges$"]="user_badgesinventory",
 
     -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
@@ -831,8 +832,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       -- badges
       check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
-      -- check if user has any player badges (NOT THE ACTUAL BADGE INVENTORY GRAB)
-      check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges")
+      discover_item(discovered_items, "user_badgesinventory:" .. tostring(item_value))
 
       -- favorites
       -- unknown if banned accounts keep their favorites?
@@ -1207,6 +1207,12 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
   if abortgrab then
     abort_item()
     return wget.actions.EXIT
+  end
+
+  -- inventory returns 404 if user hides them
+  if string.match(url["url"], "/users/[0-9]+/inventory?/$")
+    and status_code == 404 then
+    return wget.actions.NOTHING
   end
 
   if status_code == 0 or retry_url then
