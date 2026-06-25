@@ -158,6 +158,9 @@ urls = [
     # bundles
     "https://catalog.roblox.com/v1/catalog/items/2738/details?itemType=Bundle",
 
+    # thumbnails
+    "https://thumbnails.roblox.com/v1/assets?assetIds=1028826"  # catalog asset
+
     # animated thumbnail
     "https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955",
 
