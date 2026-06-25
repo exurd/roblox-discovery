@@ -657,7 +657,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- TODO: not working; http 400 and it stops...
     local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-]+)")
 
-    -- 3d thumbnails --
+    -- animated thumbnails --
     if string.match(url, "^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=[0-9]+$") then
       -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
       -- {"targetId":746767604,"state":"Completed","imageUrl":"https://t0.rbxcdn.com/180DAY-fe81470b075061200d032362af72a6d0","version":"TN3"}
@@ -740,8 +740,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://catalog.roblox.com/v1/favorites/assets/" .. item_value .. "/count")
       check("https://catalog.roblox.com/v2/recommendations/assets?assetId=" .. item_value .. "&assetTypeId=".. tostring(json["assetType"]) .."&numItems=7")
       check("https://catalog.roblox.com/v2/recommendations/assets?assetId=" .. item_value .. "&assetTypeId=".. tostring(json["assetType"]) .."&numItems=50")
-      -- get 3d thumbnail
-      discover_item(discovered_items, "asset_3dthumbs:" .. tostring(item_value))
     end
     if string.match(url, "^https?://catalog%.roblox%.com/v1/catalog/items/[0-9]+/details%?itemType=Bundle$") then
       -- TODO: deal with `"collectibleItemId": "a109ad8b-7c6b-49bc-914b-f7712da5f53e",` in json
@@ -839,7 +837,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       discover_item(discovered_items, "user_favorites:" .. tostring(item_value))  -- public regardless of inventory
       -- https://games.roblox.com/v2/users/ID/favorite/games?cursor=&limit=100&sortOrder=Desc
       -- check("https://www.roblox.com/users/" .. item_value .. "/favorites")
-      discover_item(discovered_items, "avatar_3dthumbs:" .. tostring(item_value))
     end
 
     -- {"canView":false}
