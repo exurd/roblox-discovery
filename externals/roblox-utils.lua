@@ -66,12 +66,12 @@ function mod:get_hash_url(hash)
 end
 
 
-function mod:check_tr_for_json(text, file)
+function mod:check_if_json(text, file)
   local status, json = pcall(function()
     return cjson.decode(text)
   end)
   if status then
-    return json
+    return text
   end
   -- check if gzipped
   local output = mod:decompress_gzip(file)
@@ -79,7 +79,7 @@ function mod:check_tr_for_json(text, file)
     return cjson.decode(output)
   end)
   if status then
-    return json
+    return output
   end
   return nil
 end

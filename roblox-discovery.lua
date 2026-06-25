@@ -84,6 +84,9 @@ find_item = function(url)
   local value = nil
   local type_ = nil
   for pattern, name in pairs({
+    -- animated thumbnail --
+    ["^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=([0-9]+)$"]="thumbnail_animatedasset",
+
     -- thumbnails, standard --
     ["^https?://thumbnails%.roblox%.com/v1/users/outfits%?userOutfitIds=([0-9]+)$"]="thumbnail_useroutfit",
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%?userIds=([0-9]+)$"]="thumbnail_useravatar",
@@ -652,12 +655,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- ["^https?://thumbnails%.roblox%.com/v1/assets%?assetIds=([0-9]+)$"]="thumbnail_asset",
     -- TODO: not working; http 400 and it stops...
     local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-]+)")
-    if prefix_match then
-        check_thumbnails(prefix_match)
-    end
 
     -- 3d thumbnails --
-    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/assets%-thumbnail%-animated%?assetId=[0-9]+$") then
+    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=[0-9]+$") then
       -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
       -- {"targetId":746767604,"state":"Completed","imageUrl":"https://t0.rbxcdn.com/180DAY-fe81470b075061200d032362af72a6d0","version":"TN3"}
       json = cjson.decode(html)
@@ -667,25 +667,21 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         -- print(table.show(downloaded))
         -- check(url)
         -- TODO: it would be 10x better if we can retry the request instead of aborting
-        print("Thumbnail for "..item_value.." is pending...")
-        retry_url = true
+        print("Thumbnail for "..item_value.." is pending; redo item once it's finished.")
+        abort_item()
       end
+    elseif prefix_match then
+        check_thumbnails(prefix_match)
     end
 
-    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9a-zA-Z%-]+$") then
+    if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9]+DAY-[0-9a-zA-Z%-]+$") then
       -- check if it's a json file
-      json = utils:check_tr_for_json(html, file)
-      if json ~= nil then
-        -- 3d json example:
-        -- "mtl": "180DAY-fa9a8252422e551ee5d44b62f4c6569c",
-        -- "obj": "180DAY-961ee508d617cf9d5bdd2ec134e9fa40",
-        -- "textures": [
-        --     "180DAY-e49efe685ca4dbbc3bc89af1a912f7dc"
-        -- ]
-        check(utils:get_hash_url(tostring(json["mtl"])))
-        check(utils:get_hash_url(tostring(json["obj"])))
-        for _, tex in pairs(json["textures"]) do
-          check(utils:get_hash_url(tostring(tex)))
+      json_text = utils:check_if_json(html, file)
+      if json_text ~= nil then
+        -- get all t* references inside json
+        for match in string.gmatch(json_text, '([0-9]+DAY-[0-9a-zA-Z%-]+)",') do
+          print(match)
+          check(utils:get_hash_url(tostring(match)))
         end
       end
     end
