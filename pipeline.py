@@ -79,7 +79,7 @@ if not WGET_AT:
 # It will be added to the WARC files and reported to the tracker.
 VERSION = 'DEV'
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0'
-TRACKER_ID = 'roblox-discovery'
+TRACKER_ID = 'roblox-ltgrab'
 TRACKER_HOST = 'legacy-api.arpa.li'
 MULTI_ITEM_SIZE = 10
 
@@ -203,7 +203,7 @@ def get_hash(filename):
 
 CWD = os.getcwd()
 PIPELINE_SHA1 = get_hash(os.path.join(CWD, 'pipeline.py'))
-LUA_SHA1 = get_hash(os.path.join(CWD, 'roblox-discovery.lua'))
+LUA_SHA1 = get_hash(os.path.join(CWD, 'roblox-ltgrab.lua'))
 
 def stats_id_function(item):
     d = {
@@ -229,7 +229,7 @@ class WgetArgs(object):
             '--reject-reserved-subnets',
             #'--prefer-family', ('IPv4' if 'PREFER_IPV4' in os.environ else 'IPv6'),
             '--content-on-error',
-            '--lua-script', 'roblox-discovery.lua',
+            '--lua-script', 'roblox-ltgrab.lua',
             '-o', ItemInterpolation('%(item_dir)s/wget.log'),
             '--no-check-certificate',
             '--output-document', ItemInterpolation('%(item_dir)s/wget.tmp'),
@@ -303,8 +303,8 @@ project = Project(
     title=TRACKER_ID,
     project_html='''
         <img class="project-logo" alt="Project logo" src="https://wiki.archiveteam.org/images/4/45/Roblox-icon-black.png" height="50px" title=""/>
-        <h2>Roblox Discovery <span class="links"><a href="https://roblox.com/">Website</a> &middot; <a href="http://tracker.archiveteam.org/roblox-discovery/">Leaderboard</a> &middot; <a href="https://wiki.archiveteam.org/index.php/Roblox">Wiki</a></span></h2>
-        <p>Discovering Roblox items (Users, Groups, Games, Badges, etc.)</p>
+        <h2>Roblox LT Grab <span class="links"><a href="https://roblox.com/">Website</a> &middot; <a href="http://tracker.archiveteam.org/roblox-ltgrab/">Leaderboard</a> &middot; <a href="https://wiki.archiveteam.org/index.php/Roblox">Wiki</a></span></h2>
+        <p>Archiving Roblox. Long term project to archive as much as possible (Users, Groups, Games, Badges, etc.)</p>
     '''
 )
 

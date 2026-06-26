@@ -1,4 +1,4 @@
--- utilities module for roblox-discovery.lua
+-- utilities module for roblox-ltgrab.lua
 
 local cjson = require("cjson")
 

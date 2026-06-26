@@ -8,7 +8,7 @@
 --dns-servers='9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10' \
 --reject-reserved-subnets \
 --content-on-error \
---lua-script 'roblox-discovery.lua' \
+--lua-script 'roblox-ltgrab.lua' \
 -o 'wget.log' \
 --no-check-certificate \
 --output-document 'wget.tmp' \

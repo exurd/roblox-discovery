@@ -1,4 +1,4 @@
--- roblox-discovery.lua
+-- roblox-ltgrab.lua
 
 local urlparse = require("socket.url")
 local http = require("socket.http")
@@ -1302,7 +1302,7 @@ wget.callbacks.finish = function(start_time, end_time, wall_time, numurls, total
   end
   file:close()
   for key, data in pairs({
-    ["roblox-discovery-DEVELOPMENT"] = discovered_items,
+    ["roblox-ltgrab-DEVELOPMENT"] = discovered_items,
     ["urls-ygcue8vtvkp47f8c"] = discovered_outlinks
   }) do
     print("queuing for", string.match(key, "^(.+)%-"))

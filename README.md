@@ -1,11 +1,11 @@
-# roblox-discovery
+# roblox-ltgrab
 *And now for something completely different*
 
 This is for considering a long term project using the [ArchiveTeam Warrior and Tracker system](https://tracker.archiveteam.org/). This will archive Roblox's public metadata, APIs, website, etc. For clarification purposes, this will not archive the DevForum which uses [Discourse](https://wiki.archiveteam.org/index.php/Discourse).
 
 This project was initally created in response to the Asset Delivery API [becoming unavailable to unauthenticated users](https://devforum.roblox.com/t/creator-action-required-new-asset-delivery-api-endpoints-for-community-tools/3574403) with short notice. Grabbing what is available before the upcoming threat of [an asset privacy update](https://devforum.roblox.com/t/creator-action-required-new-asset-delivery-api-endpoints-for-community-tools/3574403/63) is now the project's main goal. The last time a ["privacy update"](https://devforum.roblox.com/t/update-changes-to-asset-privacy-for-audio/1715717) occurred, it caused massive amounts of historical audio to disappear.
 
-The name of this project is due to two reasons; `roblox-grab` was [already taken](https://github.com/ArchiveTeam/roblox-grab), and `roblox-metadata-grab` doesn't really inform on what the focus of this repo is. TBH, `roblox-discovery-grab` is an okay compromise since `roblox-discovery-items` would need to exist as well.
+The name of this project is due to two reasons; `roblox-grab` was [already taken](https://github.com/ArchiveTeam/roblox-grab), and `roblox-metadata-grab` doesn't really inform on what the focus of this repo is. Whatever it's called, it should make sense for what the project entails.
 
 The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states there are 8 types of IDs:
 
@@ -42,7 +42,7 @@ The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states the
 
 ```zsh
 ➜  ~ docker build -t at-debug -f Dockerfile_debug . --platform=linux/amd64
-➜  ~ docker run -it --entrypoint=/bin/bash -v /path/to/roblox-discovery:/data --platform=linux/amd64 -i at-debug
+➜  ~ docker run -it --entrypoint=/bin/bash -v /path/to/roblox-ltgrab:/data --platform=linux/amd64 -i at-debug
 ```
 
 ```bash
@@ -57,7 +57,7 @@ warrior@9fb3cfeac873:/data$ /home/warrior/data/wget-at \
 --dns-servers='9.9.9.10,149.112.112.10,2620:fe::10,2620:fe::fe:10' \
 --reject-reserved-subnets \
 --content-on-error \
---lua-script 'roblox-discovery.lua' \
+--lua-script 'roblox-ltgrab.lua' \
 -o 'wget.log' \
 --no-check-certificate \
 --output-document 'wget.tmp' \

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # encoding=utf8
 
-# TESTING SCRIPT FOR roblox-discovery
+# TESTING SCRIPT FOR roblox-ltgrab
 from distutils.version import StrictVersion
 import subprocess
 import sys
@@ -65,7 +65,7 @@ wget_args = [
     '--reject-reserved-subnets',
     #'--prefer-family', ('IPv4' if 'PREFER_IPV4' in os.environ else 'IPv6'),
     '--content-on-error',
-    '--lua-script', 'roblox-discovery.lua',
+    '--lua-script', 'roblox-ltgrab.lua',
     '-o', 'wget_TESTING.log',
     '--no-check-certificate',
     '--output-document', 'wget_TESTING.tmp',
@@ -83,7 +83,7 @@ wget_args = [
     '--warc-file', 'TESTING',
     '--warc-header', 'operator: Archive Team',
     '--warc-header', 'x-wget-at-project-version: TESTING',
-    '--warc-header', 'x-wget-at-project-name: roblox-discovery-TEST',
+    '--warc-header', 'x-wget-at-project-name: roblox-ltgrab-TEST',
     '--warc-header', 'x-testing-purposes: TRUE',
     '--warc-dedup-url-agnostic',
 ]
