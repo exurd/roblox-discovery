@@ -12,17 +12,17 @@ mod.THUMBNAIL_SIZES = {"30x30", "42x42", "50x50", "60x62", "75x75", "110x110",
                         "728x90", "768x432", "1200x80", "330x110", "660x220"}
 -- slim table for thumbnails with specific sizes:
 mod.SLIM_ITEMS = {
-  thumbnail_useroutfit = true,
-  thumbnail_useravatar = true,
-  thumbnail_userbust = true,
-  thumbnail_userheadshot = true,
-  thumbnail_groupicon = true,
-  thumbnail_bundle = true,
-  thumbnail_badge = true,  -- this is 150x150 only, but slim'll do
-  thumbnail_gamepass = true,  -- this one too
-  thumbnail_devproducticon = true,
-  thumbnail_universeicon = true,
-  thumbnail_gameicon = true
+  "users/outfits?userOutfitIds",
+  "users/avatar?userIds",
+  "users/avatar-bust?userIds",
+  "users/avatar-headshot?userIds",
+  "groups/icons?groupIds",
+  "bundles/thumbnails?bundleIds",
+  "badges/icons?badgeIds",  -- this is 150x150 only, but slim'll do
+  "game-passes?gamePassIds",  -- this one too
+  "developer-products/icons?developerProductIds",
+  "games/icons?universeIds",
+  "places/gameicons?placeIds"
 }
 mod.THUMBNAIL_SIZES_SLIM = {"512x512", "420x420", "250x250", "150x150", "140x140",
                             "110x110", "75x75", "50x50", "30x30"}

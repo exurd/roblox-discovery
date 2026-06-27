@@ -90,22 +90,20 @@ find_item = function(url)
     -- animated thumbnail --
     ["^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=([0-9]+)$"]="thumbnail_animatedasset",
 
-    -- thumbnails, standard --
-    -- either this or it could be thumbnail:badges/icons?badgeIds=12345
-    -- but it does make the size filter parsing 10x harder to implement
-    ["^https?://thumbnails%.roblox%.com/v1/users/outfits%?userOutfitIds=([0-9]+)$"]="thumbnail_useroutfit",
-    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%?userIds=([0-9]+)$"]="thumbnail_useravatar",
-    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-bust%?userIds=([0-9]+)$"]="thumbnail_userbust",
-    ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-headshot%?userIds=([0-9]+)$"]="thumbnail_userheadshot",
-    ["^https?://thumbnails%.roblox%.com/v1/games/icons%?universeIds=([0-9]+)$"]="thumbnail_universeicon",
-    ["^https?://thumbnails%.roblox%.com/v1/games/multiget/thumbnails%?universeIds=([0-9]+)$"]="thumbnail_universethumbnail",
-    ["^https?://thumbnails%.roblox%.com/v1/places/gameicons%?placeIds=([0-9]+)$"]="thumbnail_gameicon",
-    ["^https?://thumbnails%.roblox%.com/v1/groups/icons%?groupIds=([0-9]+)$"]="thumbnail_groupicon",
-    ["^https?://thumbnails%.roblox%.com/v1/bundles/thumbnails%?bundleIds=([0-9]+)$"]="thumbnail_bundle",
-    ["^https?://thumbnails%.roblox%.com/v1/badges/icons%?badgeIds=([0-9]+)$"]="thumbnail_badge",
-    ["^https?://thumbnails%.roblox%.com/v1/developer%-products/icons%?developerProductIds=([0-9]+)$"]="thumbnail_devproducticon",
-    ["^https?://thumbnails%.roblox%.com/v1/game%-passes%?gamePassIds=([0-9]+)$"]="thumbnail_gamepass",
-    ["^https?://thumbnails%.roblox%.com/v1/assets%?assetIds=([0-9]+)$"]="thumbnail_asset",
+    -- thumbnails --
+    ["^https?://thumbnails%.roblox%.com/v1/(users/outfits%?userOutfitIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(users/avatar%?userIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(users/avatar%-bust%?userIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(users/avatar%-headshot%?userIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(games/icons%?universeIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(games/multiget/thumbnails%?universeIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(places/gameicons%?placeIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(groups/icons%?groupIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(bundles/thumbnails%?bundleIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(badges/icons%?badgeIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(developer%-products/icons%?developerProductIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(game%-passes%?gamePassIds=[0-9]+)$"]="thumbnail",
+    ["^https?://thumbnails%.roblox%.com/v1/(assets%?assetIds=[0-9]+)$"]="thumbnail",
 
     -- misc --
     ["^https?://economy%.roblox%.com/v2/assets/([0-9]+)/details$"]="economy",
@@ -177,6 +175,12 @@ set_item = function(url)
     item_value = found["value"]
     if item_type == "assetver" then
       item_value = string.gsub(item_value, "/version/", ":")
+    end
+    if item_type == "thumbnail" then
+      local item_id = string.match(item_value, "[%w%?%/%-]+%=([0-9]+)")
+      if item_id then
+        ids[item_id] = true
+      end
     end
     item_name_new = item_type .. ":" .. item_value
     if item_name_new ~= item_name then
@@ -626,13 +630,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- assets?assetIds=
     local function check_thumbnails(prefix)  -- prefix = "users/avatar?userIds=[ID]"
       -- get slimmer size table if needed
+      local prefix_type = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-]+)%=")
       local sizes = vars.THUMBNAIL_SIZES
-      local thumbnail_type = find_item(url)
-      thumbnail_type = thumbnail_type["type"]
-      if vars.SLIM_ITEMS[thumbnail_type] ~= nil then
+      if utils.find(vars.SLIM_ITEMS, prefix_type) == true then
+        print("DING DING! CORRECT")
         sizes = vars.THUMBNAIL_SIZES_SLIM
       end
-      if thumbnail_type == "thumbnail_universethumbnail" then
+      if prefix_type == "games/multiget/thumbnails?universeIds" then
         sizes = vars.THUMBNAIL_SIZES_UNI
       end
 
@@ -648,6 +652,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
+    -- TODO: deal with pending thumbnails correctly (retry url)
     local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-%=]+)$")
     if prefix_match then
       if string.match (url, "games/multiget/thumbnails%?universeIds=") then
@@ -1146,13 +1151,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       check("https://www.roblox.com/badges/" .. item_value)
       check("https://web.roblox.com/badges/" .. item_value)
-      discover_item(discovered_items, "thumbnail_badge:" .. tostring(item_value))
+      discover_item(discovered_items, "thumbnail:badges/icons?badgeIds=" .. tostring(item_value))
       if tonumber(item_value) < 2124421087 then
         -- badges below this number were part of the asset types
         -- check asset apis and thumbnail api
         check("https://catalog.roblox.com/v1/favorites/assets/"..item_value.."/count")
         discover_item(discovered_items, "economy:" .. tostring(item_value))
-        discover_item(discovered_items, "thumbnail_asset:" .. tostring(item_value))
+        discover_item(discovered_items, "thumbnail:assets?assetIds=" .. tostring(item_value))
       end
     end
     -- badges end --
@@ -1167,7 +1172,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://apis.roblox.com/universes/v1/places/"..item_value.."/universe")  -- universe: item
 
       discover_item(discovered_items, "economy:" .. tostring(item_value))
-      discover_item(discovered_items, "thumbnail_place:" .. tostring(item_value))
+      discover_item(discovered_items, "thumbnail:places/gameicons?placeIds=" .. tostring(item_value))
     end
     if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+$") then
       place_check()
