@@ -35,6 +35,8 @@ local ids = {}
 local retry_url = false
 local is_initial_url = true
 
+io.stdout:setvbuf("no") -- So prints are not buffered - http://lua.2524044.n2.nabble.com/print-stdout-and-flush-td6406981.html
+
 abort_item = function(item)
   abortgrab = true
   --killgrab = true
@@ -112,7 +114,6 @@ find_item = function(url)
 
     -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
-    ["^https?://badges%.roblox%.com/v1/users/([0-9]+)/badges$"]="user_badgesinventory",
 
     -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
@@ -133,6 +134,14 @@ find_item = function(url)
       break
     end
   end
+  -- cursored (or alternatively "cursed") items
+  -- user_badgesinventory --
+  -- dammit, this api is auth locked...
+  -- local ubi_id, ubi_cursor = string.match(url, "^https?://badges%.roblox%.com/v1/users/([0-9]+)/badges%?limit=100&cursor=(.*)$")
+  -- if ubi_id then
+  --   value = ubi_id .. ":" .. ubi_cursor
+  --   type_ = "user_badgesinventory"
+  -- end
   if value and type_ then
     return {
       ["value"]=value,
@@ -823,7 +832,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
       -- badges
       check("https://accountinformation.roblox.com/v1/users/" .. item_value .. "/roblox-badges")
-      discover_item(discovered_items, "user_badgesinventory:" .. tostring(item_value))
+      -- i forgot that they stopped guests from viewing this... shit
+      -- check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges")
 
       -- favorites
       -- unknown if banned accounts keep their favorites?
@@ -844,15 +854,21 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
-    -- player badges in user inventory *CHECK*
-    -- if empty, then user has not collected any badges or has a private inventory:
-      -- {"previousPageCursor":null,"nextPageCursor":null,"data":[]}
-    if string.match(url, "^https?://badges%.roblox%.com/v1/users/[0-9]+/badges$") then
-      json = cjson.decode(html)
-      if #json["data"] ~= 0 then
-        discover_item(discovered_items, "user_badges:" .. tostring(item_value))
-      end
-    end
+    -- auth locked api, cannot be used anymore
+    -- -- player badges in user inventory *CHECK*
+    -- -- if empty, then user has not collected any badges or has a private inventory:
+    --   -- {"previousPageCursor":null,"nextPageCursor":null,"data":[]}
+    -- local bi_uid = string.match(url, "^https?://badges%.roblox%.com/v1/users/[0-9]+/badges$")
+    -- if bi_uid and status_code ~= 403 and status_code ~= 429 then
+    --   json = cjson.decode(html)
+    --   if #json["data"] ~= 0 then
+    --     -- player does have badges, discover the next cursor
+    --     local nextpagecursor = cjson.decode(file_contents)["nextPageCursor"]
+    --     if nextpagecursor ~= cjson.null then
+    --       discover_item(discovered_items, "user_badgeinventory:"..bi_uid..":"..nextpagecursor)
+    --     end
+    --   end
+    -- end
 
     if string.match(url, "^https?://friends%.roblox%.com/v1/users/[0-9]+/friends/find") then
       json = cjson.decode(html)
