@@ -115,7 +115,7 @@ find_item = function(url)
 
     -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
-    -- subset of _gamefavorites, _toolboxfavorites and _catalogfavorites
+    -- deals with _gamefavorites, _toolboxfavorites and _catalogfavorites
     ["^https?://www%.roblox%.com/users/([0-9]+)/favorites$"]="user_favorites",
 
     -- groups --
