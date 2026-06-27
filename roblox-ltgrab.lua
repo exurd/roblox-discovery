@@ -624,43 +624,19 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- developer-products/icons?developerProductIds=
       -- game-passes?gamePassIds=
       -- assets?assetIds=
-    local THUMBNAIL_SIZES = {"30x30", "42x42", "50x50", "60x62", "75x75", "110x110",
-                            "140x140", "150x150", "160x100", "160x600", "250x250",
-                            "256x144", "300x250", "304x166", "384x216", "396x216",
-                            "420x420", "480x270", "512x512", "576x324", "700x700",
-                            "728x90", "768x432", "1200x80", "330x110", "660x220"}
-    -- slim table for thumbnails with specific sizes:
-    local SLIM_ITEMS = {
-      thumbnail_useroutfit = true,
-      thumbnail_useravatar = true,
-      thumbnail_userbust = true,
-      thumbnail_userheadshot = true,
-      thumbnail_groupicon = true,
-      thumbnail_bundle = true,
-      thumbnail_badge = true,  -- this is 150x150 only, but slim'll do
-      thumbnail_gamepass = true,  -- this one too
-      thumbnail_devproducticon = true,
-      thumbnail_universeicon = true,
-      thumbnail_gameicon = true
-    }
-    local THUMBNAIL_SIZES_SLIM = {"512x512", "420x420", "250x250", "150x150", "140x140",
-                                  "110x110", "75x75", "50x50", "30x30"}
-    local THUMBNAIL_SIZES_UNI = {"768x432", "576x324", "480x270", "384x216", "256x144"}
-    local THUMBNAIL_FORMATS = {"Png", "Jpeg", "Webp"}
-
     local function check_thumbnails(prefix)  -- prefix = "users/avatar?userIds=[ID]"
       -- get slimmer size table if needed
-      local sizes = THUMBNAIL_SIZES
+      local sizes = vars.THUMBNAIL_SIZES
       local thumbnail_type = find_item(url)
       thumbnail_type = thumbnail_type["type"]
-      if SLIM_ITEMS[thumbnail_type] ~= nil then
-        sizes = THUMBNAIL_SIZES_SLIM
+      if vars.SLIM_ITEMS[thumbnail_type] ~= nil then
+        sizes = vars.THUMBNAIL_SIZES_SLIM
       end
       if thumbnail_type == "thumbnail_universethumbnail" then
-        sizes = THUMBNAIL_SIZES_UNI
+        sizes = vars.THUMBNAIL_SIZES_UNI
       end
 
-      for _, thmb_format in pairs(THUMBNAIL_FORMATS) do
+      for _, thmb_format in pairs(vars.THUMBNAIL_FORMATS) do
         for _, thmb_size in pairs(sizes) do
           check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format)
           check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=false")
