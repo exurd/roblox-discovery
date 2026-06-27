@@ -644,6 +644,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-%=]+)$")
     if prefix_match then
+      if string.match (url, "games/multiget/thumbnails%?universeIds=") then
+        prefix_match = prefix_match .. "&countPerUniverse=10&defaults=false"
+      end
       check_thumbnails(prefix_match)
     end
 
