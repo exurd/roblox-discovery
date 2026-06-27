@@ -140,8 +140,8 @@ find_item = function(url)
       break
     end
   end
-  -- cursored (or alternatively "cursed") items
 
+  -- cursored (or alternatively "cursed") items
   local gf_id, gf_cursor = string.match(url, "^https?://games%.roblox%.com/v2/users/([0-9]+)/favorite/games%?limit=100&cursor=(.*)$")
   if gf_id then
     value = gf_id .. ":" .. gf_cursor
@@ -172,12 +172,21 @@ find_item = function(url)
     type_ = "user_gamepasses-cursored"
   end
   
-  -- "^https?://apis%.roblox%.com/developer%-products/v2/universes/([0-9]+)/developerproducts%?"
   local dpu_id, dpu_cursor = string.match(url, "^https?://apis%.roblox%.com/developer%-products/v2/universes/([0-9]+)/developerproducts%?limit=100&cursor=(.*)$")
   if dpu_id then
     value = dpu_id .. ":" .. dpu_cursor
     type_ = "universe_developerproducts"
   end
+
+  -- NEEDS AUTHENTICATION TO WORK
+  -- SO IM NOT TOUCHING IT ANYMORE
+  -- -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Asc&limit=100")
+  -- -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Asc&limit=100") 
+  -- local dpu_id, dpu_cursor = string.match(url, "^https?://friends%.roblox%.com/v1/users/([0-9]+)/followers%?sortOrder=Asc&limit=100&cursor=(.*)$")
+  -- if dpu_id then
+  --   value = dpu_id .. ":" .. dpu_cursor
+  --   type_ = "user_followers"
+  -- end
 
   -- NEEDS AUTHENTICATION TO WORK
   -- local bf_id, bf_assettype, bf_cursor = string.match(url, "^https?://catalog%.roblox%.com/v1/favorites/users/([0-9]+)/favorites/([0-9]+)/bundles%?itemsPerPage=100&sortOrder=Desc&cursor=(.*)$")
@@ -839,10 +848,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- check("https://www.roblox.com/users/" .. item_value .. "/friends")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/find?limit=50")
 
-      discover_item(discovered_items, "user_followers:" .. string.format("%.0f", item_value))
-      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=100")
-      discover_item(discovered_items, "user_following:" .. string.format("%.0f", item_value))
-      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=100")
+      -- NEEDS AUTHENTICATION TO WORK
+      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Asc&limit=100")
+      -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Asc&limit=100")
 
       -- games
       -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
@@ -906,13 +914,14 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check_cursor(url, json, "NextCursor")
     end
 
-    if string.match(url, "/v1/users/[0-9]+/follow[a-z]+%?") then
-      json = cjson.decode(html)
-      check_cursor(url, json, "nextPageCursor")
-      for _, data in pairs(json["data"]) do
-        discover_item(discovered_items, "user:" .. string.format("%.0f", data["id"]))
-      end
-    end
+    -- NEEDS AUTHENTICATION TO WORK
+    -- if string.match(url, "/v1/users/[0-9]+/follow[ersing]+%?") then
+    --   json = cjson.decode(html)
+    --   -- check_cursor(url, json, "nextPageCursor")
+    --   for _, data in pairs(json["data"]) do
+    --     discover_item(discovered_items, "user:" .. string.format("%.0f", data["id"]))
+    --   end
+    -- end
 
     -- favorites start --
 
