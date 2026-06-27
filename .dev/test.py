@@ -178,6 +178,7 @@ urls = [
     "https://thumbnails.roblox.com/v1/game-passes?gamePassIds=1",  # gamepasses
     "https://thumbnails.roblox.com/v1/games/icons?universeIds=7006259506",  # universe icons
     "https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=7006259506",  # universe thumbnails
+    "https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=140340489",  # universe no thumbnails
     "https://thumbnails.roblox.com/v1/places/gameicons?placeIds=1818",  # game icon
 
     # animated thumbnail
