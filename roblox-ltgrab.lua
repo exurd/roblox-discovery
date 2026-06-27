@@ -88,6 +88,8 @@ find_item = function(url)
     ["^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=([0-9]+)$"]="thumbnail_animatedasset",
 
     -- thumbnails, standard --
+    -- either this or it could be thumbnail:badges/icons?badgeIds=12345
+    -- but it does make the size filter parsing 10x harder to implement
     ["^https?://thumbnails%.roblox%.com/v1/users/outfits%?userOutfitIds=([0-9]+)$"]="thumbnail_useroutfit",
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%?userIds=([0-9]+)$"]="thumbnail_useravatar",
     ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-bust%?userIds=([0-9]+)$"]="thumbnail_userbust",
@@ -442,79 +444,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
   end
 
   if allowed(url)
-    and status_code == 400 then
-    -- thumbnail handler start --
-    -- prefixes that use this format:
-      -- users/outfits?userOutfitIds=
-      -- users/avatar?userIds=
-      -- users/avatar-bust?userIds=
-      -- users/avatar-headshot?userIds=
-      -- games/icons?universeIds=
-      -- games/multiget/thumbnails?universeIds=*&countPerUniverse=10&defaults=true
-      -- places/gameicons?placeIds=
-      -- groups/icons?groupIds=
-      -- bundles/thumbnails?bundleIds=
-      -- badges/icons?badgeIds=
-      -- developer-products/icons?developerProductIds=
-      -- game-passes?gamePassIds=
-      -- assets?assetIds=
-    local THUMBNAIL_SIZES = {"30x30", "42x42", "50x50", "60x62", "75x75", "110x110",
-                            "140x140", "150x150", "160x100", "160x600", "250x250",
-                            "256x144", "300x250", "304x166", "384x216", "396x216",
-                            "420x420", "480x270", "512x512", "576x324", "700x700",
-                            "728x90", "768x432", "1200x80", "330x110", "660x220"}
-    -- slim table for thumbnails with specific sizes:
-    local SLIM_ITEMS = {
-      thumbnail_useroutfit = true,
-      thumbnail_useravatar = true,
-      thumbnail_userbust = true,
-      thumbnail_userheadshot = true,
-      thumbnail_groupicon = true,
-      thumbnail_bundle = true,
-      thumbnail_badge = true,  -- this is 150x150 only, but slim'll do
-      thumbnail_gamepass = true,  -- this one too
-      thumbnail_devproducticon = true,
-      thumbnail_universeicon = true,
-      thumbnail_gameicon = true
-    }
-    local THUMBNAIL_SIZES_SLIM = {"512x512", "420x420", "250x250", "150x150", "140x140",
-                                  "110x110", "75x75", "50x50", "30x30"}
-    local THUMBNAIL_SIZES_UNI = {"768x432", "576x324", "480x270", "384x216", "256x144"}
-    local THUMBNAIL_FORMATS = {"Png", "Jpeg", "Webp"}
-
-    local function check_thumbnails(prefix)  -- prefix = "users/avatar?userIds=[ID]"
-      -- get slimmer size table if needed
-      local sizes = THUMBNAIL_SIZES
-      local thumbnail_type = find_item(url)
-      thumbnail_type = thumbnail_type["type"]
-      if SLIM_ITEMS[thumbnail_type] ~= nil then
-        sizes = THUMBNAIL_SIZES_SLIM
-      end
-      if thumbnail_type == "thumbnail_universethumbnail" then
-        sizes = THUMBNAIL_SIZES_UNI
-      end
-
-      for _, thmb_format in pairs(THUMBNAIL_FORMATS) do
-        for _, thmb_size in pairs(sizes) do
-          check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format)
-          check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=false")
-          local a, b = thmb_size:match("^(%d+)x(%d+)$")
-          if a == b then  -- isCircular
-            check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=true")
-          end
-        end
-      end
-    end
-
-    local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-%=]+)$")
-    if prefix_match then
-      check_thumbnails(prefix_match)
-    end
-    -- thumbnail handler end --
-  end
-
-  if allowed(url)
-    and (status_code < 300 or status_code == 302) then
+    and (status_code < 300 or status_code == 302)
+    or string.match(url, "^https?://thumbnails%.roblox%.com/v1/") then
     html = read_file(file)
 
 
@@ -647,20 +578,75 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
 
     -- thumbnails api start --
-    -- ["^https?://thumbnails%.roblox%.com/v1/users/outfits%?userOutfitIds=([0-9]+)$"]="thumbnail_useroutfit",
-    -- ["^https?://thumbnails%.roblox%.com/v1/users/avatar%?userIds=([0-9]+)$"]="thumbnail_useravatar",
-    -- ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-bust%?userIds=([0-9]+)$"]="thumbnail_userbust",
-    -- ["^https?://thumbnails%.roblox%.com/v1/users/avatar%-headshot%?userIds=([0-9]+)$"]="thumbnail_userheadshot",
-    -- ["^https?://thumbnails%.roblox%.com/v1/games/icons%?universeIds=([0-9]+)$"]="thumbnail_universeicon",
-    -- ["^https?://thumbnails%.roblox%.com/v1/games/multiget%?universeIds=([0-9]+)$"]="thumbnail_universethumbnail",
-    -- ["^https?://thumbnails%.roblox%.com/v1/places/gameicons%?placeIds=([0-9]+)$"]="thumbnail_gameicon",
-    -- ["^https?://thumbnails%.roblox%.com/v1/groups/icons%?groupIds=([0-9]+)$"]="thumbnail_groupicon",
-    -- ["^https?://thumbnails%.roblox%.com/v1/bundles/thumbnails%?groupIds=([0-9]+)$"]="thumbnail_bundlethumbnail",
-    -- ["^https?://thumbnails%.roblox%.com/v1/badges/icons%?badgeIds=([0-9]+)$"]="thumbnail_bundlethumbnail",
-    -- ["^https?://thumbnails%.roblox%.com/v1/developer%-products/icons%?developerProductIds=([0-9]+)$"]="thumbnail_devproducticon",
-    -- ["^https?://thumbnails%.roblox%.com/v1/game%-passes%?gamePassIds=([0-9]+)$"]="thumbnail_gamepass",
-    -- ["^https?://thumbnails%.roblox%.com/v1/assets%?assetIds=([0-9]+)$"]="thumbnail_asset",
-    -- TODO: not working; http 400 and it stops...
+
+    -- thumbnail handler start --
+    -- prefixes that use this format:
+      -- users/outfits?userOutfitIds=
+      -- users/avatar?userIds=
+      -- users/avatar-bust?userIds=
+      -- users/avatar-headshot?userIds=
+      -- games/icons?universeIds=
+      -- games/multiget/thumbnails?universeIds=*&countPerUniverse=10&defaults=true
+      -- places/gameicons?placeIds=
+      -- groups/icons?groupIds=
+      -- bundles/thumbnails?bundleIds=
+      -- badges/icons?badgeIds=
+      -- developer-products/icons?developerProductIds=
+      -- game-passes?gamePassIds=
+      -- assets?assetIds=
+    local THUMBNAIL_SIZES = {"30x30", "42x42", "50x50", "60x62", "75x75", "110x110",
+                            "140x140", "150x150", "160x100", "160x600", "250x250",
+                            "256x144", "300x250", "304x166", "384x216", "396x216",
+                            "420x420", "480x270", "512x512", "576x324", "700x700",
+                            "728x90", "768x432", "1200x80", "330x110", "660x220"}
+    -- slim table for thumbnails with specific sizes:
+    local SLIM_ITEMS = {
+      thumbnail_useroutfit = true,
+      thumbnail_useravatar = true,
+      thumbnail_userbust = true,
+      thumbnail_userheadshot = true,
+      thumbnail_groupicon = true,
+      thumbnail_bundle = true,
+      thumbnail_badge = true,  -- this is 150x150 only, but slim'll do
+      thumbnail_gamepass = true,  -- this one too
+      thumbnail_devproducticon = true,
+      thumbnail_universeicon = true,
+      thumbnail_gameicon = true
+    }
+    local THUMBNAIL_SIZES_SLIM = {"512x512", "420x420", "250x250", "150x150", "140x140",
+                                  "110x110", "75x75", "50x50", "30x30"}
+    local THUMBNAIL_SIZES_UNI = {"768x432", "576x324", "480x270", "384x216", "256x144"}
+    local THUMBNAIL_FORMATS = {"Png", "Jpeg", "Webp"}
+
+    local function check_thumbnails(prefix)  -- prefix = "users/avatar?userIds=[ID]"
+      -- get slimmer size table if needed
+      local sizes = THUMBNAIL_SIZES
+      local thumbnail_type = find_item(url)
+      thumbnail_type = thumbnail_type["type"]
+      if SLIM_ITEMS[thumbnail_type] ~= nil then
+        sizes = THUMBNAIL_SIZES_SLIM
+      end
+      if thumbnail_type == "thumbnail_universethumbnail" then
+        sizes = THUMBNAIL_SIZES_UNI
+      end
+
+      for _, thmb_format in pairs(THUMBNAIL_FORMATS) do
+        for _, thmb_size in pairs(sizes) do
+          check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format)
+          check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=false")
+          local a, b = thmb_size:match("^(%d+)x(%d+)$")
+          if a == b then  -- isCircular
+            check("https://thumbnails.roblox.com/v1/"..prefix.."&size="..thmb_size.."&format="..thmb_format.."&isCircular=true")
+          end
+        end
+      end
+    end
+
+    local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-%=]+)$")
+    if prefix_match then
+      check_thumbnails(prefix_match)
+    end
+
     -- animated thumbnails --
     if string.match(url, "^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=[0-9]+$") then
       -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
@@ -676,6 +662,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         abort_item()
       end
     end
+    
+    -- thumbnails api end --
+
 
     if string.match(url, "^https?://t[0-9]%.rbxcdn%.com/[0-9]+DAY-[0-9a-zA-Z%-]+$") then
       -- check if it's a json file
@@ -688,7 +677,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         end
       end
     end
-    -- thumbnails api end --
 
 
     -- direct file (sc*) start --
@@ -1073,7 +1061,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- TODO: implement
     -- https://www.roblox.com/game-pass/205379487/Lucky
     -- https://apis.roblox.com/game-passes/v1/game-passes/205379487/product-info
-    -- https://thumbnails.roblox.com/v1/game-passes?gamePassIds=1&size=150x150&format=Png&isCircular=false
     -- gamepasses end
 
 
