@@ -1046,13 +1046,19 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- TODO: urls to add:
     -- https://www.roblox.com/games/getgamepassesinnerpartial?startIndex=0&maxRows=50&placeId=8737899170
 
-    if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+/[0-9a-zA-Z-]+$") then
-      check("https://web.roblox.com/games/" .. item_value)
+    function place_check()
       check("https://www.roblox.com/games/votingservice/" .. item_value)
       check("https://apis.roblox.com/universes/v1/places/"..item_value.."/universe")  -- universe: item
 
       discover_item(discovered_items, "economy:" .. tostring(item_value))
       discover_item(discovered_items, "thumbnail_place:" .. tostring(item_value))
+    end
+    if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+$") then
+      place_check()
+    end
+    if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+/[0-9a-zA-Z-]+$") then
+      check("https://web.roblox.com/games/" .. item_value)
+      place_check()
     end
 
     if string.match(url, "^https?://apis%.roblox%.com/universes/v1/places/[0-9]+/universe$") then

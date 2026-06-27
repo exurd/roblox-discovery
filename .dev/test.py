@@ -143,6 +143,7 @@ urls = [
     # places
     "https://www.roblox.com/games/1818",  # crossroads (roblox owned)
     "https://www.roblox.com/games/920587237",  # adopt me
+    "https://www.roblox.com/games/11358843975",  # not viewable on web
 
     # universes
     "https://games.roblox.com/v1/games?universeIds=13058",  # crossroads (roblox owned)
