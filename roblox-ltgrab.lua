@@ -1011,19 +1011,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       if #json["data"] ~= 0 then
         -- some types like EmoteAnimations have a completely different
         -- json layout... great! just what i needed
-        if tonumber(asset_type) == 61         -- EmoteAnimation
-          or tonumber(asset_type) == 41       -- HairAccessory
-          or tonumber(asset_type) == 42       -- FaceAccessory
-          or tonumber(asset_type) == 43       -- NeckAccessory
-          or tonumber(asset_type) == 44       -- ShoulderAccessory
-          or tonumber(asset_type) == 45       -- FrontAccessory
-          or tonumber(asset_type) == 46       -- BackAccessory
-          or tonumber(asset_type) == 47       -- WaistAccessory
-          or tonumber(asset_type) == 19       -- Gear
-          or tonumber(asset_type) == 12       -- Pants
-          or tonumber(asset_type) == 11       -- Shirt
-          or tonumber(asset_type) == 8        -- Hat
-          or tonumber(asset_type) == 2 then   -- TShirt
+        if utils.find(vars.ASSET_TYPES_CATALOG_FAVORITES_DIFFERENTLAYOUT, tonumber(asset_type)) then
             for _, entry in pairs(json["data"]) do
               if entry["itemType"] == "Asset" then
                 local assetId = string.format("%.0f", entry["id"])
@@ -1036,7 +1024,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
                 discover_item(discovered_items, "group:" .. ctId)
               end
             end
-          elseif tonumber(asset_type) == 38 then  -- Plugin
+          elseif utils.find(vars.ASSET_TYPES_CATALOG_FAVORITES_DEVTYPES, tonumber(asset_type)) then
             for _, entry in pairs(json["data"]) do
               local assetId = string.format("%.0f", entry["id"])
               discover_item(discovered_items, "asset:" .. assetId)
