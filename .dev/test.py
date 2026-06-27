@@ -140,6 +140,17 @@ urls = [
     "https://users.roblox.com/v1/users/29666286",  # account with open inventory
     "https://users.roblox.com/v1/users/20005",  # account with private inventory
 
+    # favorites
+    "https://www.roblox.com/users/29666286/favorites",  # account with open inventory
+    "https://www.roblox.com/users/365193/favorites",  # banned user w/ more stuff
+    # game favorites
+    "https://games.roblox.com/v2/users/29666286/favorite/games?limit=100&cursor=eyJrZXkiOiJpZF8yendBQUFZbWVwS1FKendBQUFBU3BmazcwIiwic29ydE9yZGVyIjoiRGVzYyIsInBhZ2luZ0RpcmVjdGlvbiI6IkZvcndhcmQiLCJwYWdlTnVtYmVyIjoxLCJkaXNjcmltaW5hdG9yIjoidXNlcklkOjI5NjY2Mjg2YWNjZXNzRmlsdGVyOiIsImNvdW50IjoxMDB9CmRjOWYzYTQ4NTliMjgyNzFjZjM2ZGQ5MzVjM2I1OWRjNjEwNGQ1OTRhMjNjOTVlOTQzZGE2NjBiOGVmMTViMDI=",
+    # toolbox favorites
+    "https://apis.roblox.com/toolbox-service/v1/favorites/user/29666286/3?cursor=id_2zwAAAXe0y6JdzwAAAAGXHh4C",
+    # catalog favorites
+    # TODO: can't find an example for this...
+    # "https://catalog.roblox.com/v1/favorites/users/[USER_ID]/favorites/[ASSET_TYPE_ID]/assets?limit=100&sortOrder=Desc&cursor=[CURSOR]",
+
     # places
     "https://www.roblox.com/games/1818",  # crossroads (roblox owned)
     "https://www.roblox.com/games/920587237",  # adopt me

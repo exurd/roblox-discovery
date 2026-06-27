@@ -9,6 +9,7 @@ local base64 = require("base64")
 local ltn12 = require("ltn12")
 
 local utils = require("externals.roblox-utils")
+local vars = require("externals.roblox-vars")
 
 local item_dir = os.getenv("item_dir")
 local warc_file_base = os.getenv("warc_file_base")
@@ -114,6 +115,8 @@ find_item = function(url)
 
     -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
+    -- subset of _gamefavorites, _toolboxfavorites and _catalogfavorites
+    ["^https?://www%.roblox%.com/users/([0-9]+)/favorites$"]="user_favorites",
 
     -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
@@ -144,6 +147,21 @@ find_item = function(url)
   --   value = ubi_id .. ":" .. ubi_cursor
   --   type_ = "user_badgesinventory"
   -- end
+  local gf_id, gf_cursor = string.match(url, "^https?://games%.roblox%.com/v2/users/([0-9]+)/favorite/games%?limit=100&cursor=(.*)$")
+  if gf_id then
+    value = gf_id .. ":" .. gf_cursor
+    type_ = "user_gamefavorites"
+  end
+  local tbf_id, tbf_assettype, tbf_cursor = string.match(url, "^https?://apis%.roblox%.com/toolbox%-service/v1/favorites/user/([0-9]+)/([0-9]+)%?cursor=(.*)$")
+  if tbf_id then
+    value = tbf_id .. ":" .. tbf_assettype .. ":" .. tbf_cursor
+    type_ = "user_toolboxfavorites"
+  end
+  local cf_id, cf_assettype, cf_cursor = string.match(url, "^https?://catalog%.roblox%.com/v1/favorites/users/([0-9]+)/favorites/([0-9]+)/assets%?limit=100&sortOrder=Desc&cursor=(.*)$")
+  if cf_id then
+    value = cf_id .. ":" .. cf_assettype .. ":" .. cf_cursor
+    type_ = "user_catalogfavorites"
+  end
   if value and type_ then
     return {
       ["value"]=value,
@@ -191,12 +209,13 @@ allowed = function(url, parenturl)
     or string.match(url, "^https?://[^/]+/abusereport/")
     or string.match(url, "^https?://[^/]+/[a-z][a-z]/abusereport/")
     or string.match(url, "^https://apis%.roblox%.com/voting%-api/vote/asset/[0-9]+%?vote=")
-    -- we want the translated infomation/websites as creators
-    -- can add their own translations
-    -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
-    -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/users/")
-    -- or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/groups/")
-    or string.match(url, "^https?://www%.roblox%.com/messages/compose%?") then
+    -- we want the translated infomation that creators supplied for their games
+    -- there is most likely a better way to do that, though
+    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
+    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/users/")
+    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/groups/")
+    or string.match(url, "^https?://www%.roblox%.com/messages/compose%?")
+    or string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/href") then
     return false
   end
 
@@ -837,11 +856,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- i forgot that they stopped guests from viewing this... shit
       -- check("https://badges.roblox.com/v1/users/" .. item_value .. "/badges")
 
-      -- favorites
+      -- favorites, which are public regardless of inventory status
       -- unknown if banned accounts keep their favorites?
-      discover_item(discovered_items, "user_favorites:" .. tostring(item_value))  -- public regardless of inventory
-      -- https://games.roblox.com/v2/users/ID/favorite/games?cursor=&limit=100&sortOrder=Desc
-      -- check("https://www.roblox.com/users/" .. item_value .. "/favorites")
+      -- edit: seems like they do! ;)
+      -- favorites could be privated one day, so to keep this working
+      -- (and to avoid those tedious rate limits) that task will be done
+      -- in a different item
+      discover_item(discovered_items, "user_favorites:" .. tostring(item_value))
     end
 
     -- {"canView":false}
@@ -851,6 +872,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       print(json["canView"])
       if json["canView"] == true then  -- TODO: TEST THIS PART
         discover_item(discovered_items, "user_inventory:" .. tostring(item_value))
+        -- check("https://inventory.roblox.com/v2/users/".. item_value .."/inventory/" .. tostring(assetType) .. "?cursor=&limit=100&sortOrder=Desc")
         discover_item(discovered_items, "user_bundles" .. tostring(item_value))
         discover_item(discovered_items, "user_gamepasses:" .. tostring(item_value))
       end
@@ -888,33 +910,142 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
 
-    -- TODO: update favorites and inventory code
-    -- if string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/favorites$") then
-    --   check("https://inventory.roblox.com/v1/users/" .. item_value .. "/categories/favorites")
-    -- end
-    -- if string.match(url, "/v1/users/[0-9]+/categories/favorites$") then
-    --   json = cjson.decode(html)
-    --   for _, data in pairs(json["categories"]) do
-    --     for _, item_data in pairs(data["items"]) do
-    --       if item_data["type"] == "AssetType" then
-    --         check("https://www.roblox.com/users/favorites/list-json?assetTypeId=" .. tostring(item_data["id"]) .. "&cursor=&itemsPerPage=100&userId=" .. item_value)
-    --         check("https://inventory.roblox.com/v2/users/".. item_value .."/inventory/" .. tostring(item_data["id"]) .. "?cursor=&limit=100&sortOrder=Desc")
-    --       end
-    --     end
-    --   end
-    -- end
+    -- favorites start --
 
-    -- favorites
-    if string.match(url, "/users/favorites/list%-json%?") then
-      json = cjson.decode(html)
-      for _, data in pairs(json["Data"]["Items"]) do
-        -- hack: avoids asset:1.2280314827044e+14 (should this be done to user ids too?)
-        local assetIdStr = string.format("%.0f", data["Item"]["AssetId"])
-        discover_item(discovered_items, "asset:" .. assetIdStr)
-        discover_item(discovered_items, "user:" .. tostring(data["Creator"]["Id"]))
+    -- user_favorites:
+    if string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/favorites$") then
+      -- we only need to loop through the asset types once,
+      -- then we can have each of them be it's own item
+      -- user_catalogfavorites:
+      for _, assetType in pairs(vars.ASSET_TYPES_CATALOG) do
+        check("https://catalog.roblox.com/v1/favorites/users/"..item_value.."/favorites/"..assetType.."/assets?limit=100&sortOrder=Desc")
       end
-      check_cursor(url, json["Data"], "NextCursor")
+      -- user_toolboxfavorites:
+      for _, assetType in pairs(vars.ASSET_TYPES_CREATORSTORE) do
+        check("https://apis.roblox.com/toolbox-service/v1/favorites/user/" .. item_value .. "/" .. assetType)
+      end
+
+      -- user_gamefavorites:
+      check("https://games.roblox.com/v2/users/".. item_value .."/favorite/games?limit=100")  -- only supports Desc sortOrder, don't specify
     end
+
+    -- game favorites
+    local user_id = string.match(url, "^https?://games%.roblox%.com/v2/users/(%d+)/favorite/games%?")
+    if user_id and status_code ~= 403 and status_code ~= 429 then
+      json = cjson.decode(html)
+
+      -- this api lists universe ids, nice!
+        -- id: universe id
+        -- creator/id: user id
+        -- rootPlace/id: asset id
+      for _, entry in pairs(json["data"]) do
+        -- hack: avoids asset:1.2280314827044e+14
+        -- (should this be done to user ids too? edit: might as well)
+        local universeId = string.format("%.0f", entry["id"])
+        local creatorId = string.format("%.0f", entry["creator"]["id"])
+        local rootPlaceId = string.format("%.0f", entry["rootPlace"]["id"])
+        discover_item(discovered_items, "universe:" .. universeId)
+        discover_item(discovered_items, "user:" .. creatorId)
+        discover_item(discovered_items, "asset:" .. rootPlaceId)
+      end
+
+      local nextpagecursor = json["nextPageCursor"]
+      if nextpagecursor ~= cjson.null then
+        discover_item(discovered_items, "user_gamefavorites:"..user_id..":"..nextpagecursor)
+      end
+    end
+
+    -- toolbox-service favorites
+    local user_id, asset_type = string.match(url, "^https?://apis%.roblox%.com/toolbox%-service/v1/favorites/user/([0-9]+)/([0-9]+)")
+    if (user_id and asset_type) and status_code ~= 403 and status_code ~= 429 then
+      json = cjson.decode(html)
+      if #json["data"] ~= 0 then
+        for _, entry in pairs(json["data"]) do
+          local assetId = string.format("%.0f", entry["asset"]["id"])
+          discover_item(discovered_items, "asset:" .. assetId)
+          -- check if group or user
+          local userId = entry["creator"]["userId"]
+          if userId ~= nil then
+            userId = string.format("%.0f", userId)
+            discover_item(discovered_items, "user:" .. userId)
+          end
+          local groupId = entry["creator"]["groupId"]
+          if groupId ~= nil then
+            groupId = string.format("%.0f", groupId)
+            discover_item(discovered_items, "group:" .. groupId)
+            -- roblox could be a dick here and remove this next one, so i'm not risking it.
+            -- do a check if this exists or not
+            local userId = entry["creator"]["latestGroupUpdaterUserId"]
+            if userId ~= nil then
+              userId = string.format("%.0f", userId)
+              discover_item(discovered_items, "user:" .. userId)
+            end
+          end
+        end
+
+        -- this cursor is strange, in that it's not in the response at all
+        -- if there isn't a next page...
+        local nextpagecursor = json["nextPageCursor"]
+        if nextpagecursor ~= nil and nextpagecursor ~= cjson.null then
+          discover_item(discovered_items, "user_toolboxfavorites:"..user_id..":"..asset_type..":"..nextpagecursor)
+        end
+      end
+    end
+
+    -- catalog favorites
+    -- https://catalog.roblox.com/v1/favorites/users/29666286/favorites/3/assets
+    local user_id, asset_type = string.match(url, "^https?://catalog%.roblox%.com/v1/favorites/users/([0-9]+)/favorites/([0-9]+)/assets%?")
+    if (user_id and asset_type) and status_code ~= 403 and status_code ~= 429 then
+      json = cjson.decode(html)
+      if #json["data"] ~= 0 then
+        -- some types like EmoteAnimations have a completely different
+        -- json layout... great! just what i needed
+        if tonumber(asset_type) == 61         -- EmoteAnimation
+          or tonumber(asset_type) == 41       -- HairAccessory
+          or tonumber(asset_type) == 42       -- FaceAccessory
+          or tonumber(asset_type) == 43       -- NeckAccessory
+          or tonumber(asset_type) == 44       -- ShoulderAccessory
+          or tonumber(asset_type) == 45       -- FrontAccessory
+          or tonumber(asset_type) == 46       -- BackAccessory
+          or tonumber(asset_type) == 47       -- WaistAccessory
+          or tonumber(asset_type) == 19       -- Gear
+          or tonumber(asset_type) == 12       -- Pants
+          or tonumber(asset_type) == 11       -- Shirt
+          or tonumber(asset_type) == 8        -- Hat
+          or tonumber(asset_type) == 2 then   -- TShirt
+            for _, entry in pairs(json["data"]) do
+              if entry["itemType"] == "Asset" then
+                local assetId = string.format("%.0f", entry["id"])
+                discover_item(discovered_items, "asset:" .. assetId)
+              end
+              local ctId = string.format("%.0f", entry["creatorTargetId"])
+              if entry["creatorType"] == "User" then
+                discover_item(discovered_items, "user:" .. ctId)
+              elseif entry["creatorType"] == "Group" then
+                discover_item(discovered_items, "group:" .. ctId)
+              end
+            end
+          elseif tonumber(asset_type) == 38 then  -- Plugin
+            for _, entry in pairs(json["data"]) do
+              local assetId = string.format("%.0f", entry["id"])
+              discover_item(discovered_items, "asset:" .. assetId)
+            end
+          else
+            for _, entry in pairs(json["data"]) do
+              local assetId = string.format("%.0f", entry["assetId"])
+              discover_item(discovered_items, "asset:" .. assetId)
+            end
+        end
+
+        local nextpagecursor = json["nextPageCursor"]
+        if nextpagecursor ~= cjson.null then
+          discover_item(discovered_items, "user_catalogfavorites:"..user_id..":"..asset_type..":"..nextpagecursor)
+        end
+      end
+    end
+
+    -- favorites end --
+
     -- inventory
     if string.match(url, "^https?://inventory%.roblox%.com/v2/users/[0-9]+/inventory/") then
       json = cjson.decode(html)
