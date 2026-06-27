@@ -238,12 +238,17 @@ allowed = function(url, parenturl)
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/remove$")
     or string.match(url, "^https?://[^/]+/abusereport/")
     or string.match(url, "^https?://[^/]+/[a-z][a-z]/abusereport/")
+    or string.match(url, "^https?://[^/]+/[a-z][a-z]/report-abuse/")
     or string.match(url, "^https://apis%.roblox%.com/voting%-api/vote/asset/[0-9]+%?vote=")
     -- we want the translated infomation that creators supplied for their games
     -- there is most likely a better way to do that, though
     or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/catalog/")
     or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/users/")
     or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/groups/")
+    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/communities/")
+    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/games/")
+    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/badges/")
+    or string.match(url, "^https?://www%.roblox%.com/[a-z][a-z]/bundles/")
     or string.match(url, "^https?://www%.roblox%.com/messages/compose%?")
     or string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/href") then
     return false
