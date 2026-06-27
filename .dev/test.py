@@ -183,7 +183,7 @@ urls = [
 
     # catalog
     "https://catalog.roblox.com/v1/catalog/items/15837813902/details?itemType=Asset",
-    "https://catalog.roblox.com/v1/catalog/items/102232291/details?itemType=Asset",  # unviewable, should abort in case it become available again
+    # "https://catalog.roblox.com/v1/catalog/items/102232291/details?itemType=Asset",  # unviewable, should abort in case it becomes available again
 
     # bundles
     "https://catalog.roblox.com/v1/catalog/items/2738/details?itemType=Bundle",
