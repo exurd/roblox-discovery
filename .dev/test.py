@@ -6,6 +6,7 @@ from distutils.version import StrictVersion
 import subprocess
 import sys
 import re
+import random
 
 if sys.version_info[0] < 3:
     from urllib import unquote
@@ -190,6 +191,7 @@ urls = [
 
     # thumbnails
     "https://thumbnails.roblox.com/v1/assets?assetIds=1028826",  # catalog asset
+    # f"https://thumbnails.roblox.com/v1/assets?assetIds={random.randrange(1000,1528826)}",  # random old asset
     "https://thumbnails.roblox.com/v1/users/outfits?userOutfitIds=41789",  # user outfit
     "https://thumbnails.roblox.com/v1/users/avatar?userIds=1",  # user avatar
     "https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=1",  # user avatar bust
@@ -206,6 +208,8 @@ urls = [
 
     # animated thumbnail
     "https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=619509955",
+    # "https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=5135830016",  # error
+    "https://thumbnails.roblox.com/v1/asset-thumbnail-animated?assetId=88859617281337",
 
     # economy api (rate limit of one request per minute)
     "https://economy.roblox.com/v2/assets/1818/details",  # place

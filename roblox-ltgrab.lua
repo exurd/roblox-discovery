@@ -685,27 +685,11 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     -- TODO: deal with pending thumbnails correctly (retry url)
     local prefix_match = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-%=]+)$")
-    if prefix_match then
-      if string.match (url, "games/multiget/thumbnails%?universeIds=") then
-        prefix_match = prefix_match .. "&countPerUniverse=10&defaults=false"
-      end
-      check_thumbnails(prefix_match)
-    end
-
-    -- animated thumbnails --
-    if string.match(url, "^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=[0-9]+$") then
-      -- {"targetId":5135830016,"state":"Pending","imageUrl":null,"version":"TN3"}
-      -- {"targetId":746767604,"state":"Completed","imageUrl":"https://t0.rbxcdn.com/180DAY-fe81470b075061200d032362af72a6d0","version":"TN3"}
-      json = cjson.decode(html)
-      if json["state"] == "Pending" then
-        -- retry_url = true  -- TODO: test if this works (it doesn't?)
-        -- downloaded[url] = false
-        -- print(table.show(downloaded))
-        -- check(url)
-        -- TODO: it would be 10x better if we can retry the request instead of aborting
-        print("Thumbnail for "..item_value.." is pending; redo item once it's finished.")
-        abort_item()
-      end
+    if prefix_match and not string.match(url, "^https?://thumbnails%.roblox%.com/v1/asset%-thumbnail%-animated%?assetId=[0-9]+$") then
+        if string.match (url, "games/multiget/thumbnails%?universeIds=") then
+          prefix_match = prefix_match .. "&countPerUniverse=10&defaults=false"
+        end
+        check_thumbnails(prefix_match)
     end
     
     -- thumbnails api end --
@@ -1340,10 +1324,24 @@ wget.callbacks.write_to_warc = function(url, http_stat)
       return false
     end
   end
-  if string.match(url["url"], "^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-%=]+)")
-    and http_stat["statcode"] == 400 then
+
+  -- check thumbnail state
+  if string.match(url["url"], "^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-%=]+)") then
+    if http_stat["statcode"] == 400 then return false end
+
+    local json = cjson.decode(read_file(http_stat["local_file"]))
+    if json["state"] == "Pending"
+    or (json["data"] and json["data"][1]["state"] == "Pending") then
+      print("Thumbnail for "..item_value.." is pending. Retrying...")
+      retry_url = true
       return false
+    end
+    if json["state"] == "Error" then
+      print("Thumbnail state is Error. Aborting.")
+      abort_item()
+    end
   end
+
   if http_stat["statcode"] ~= 200
     and http_stat["statcode"] ~= 301
     and http_stat["statcode"] ~= 302
