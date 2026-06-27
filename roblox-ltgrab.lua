@@ -1078,13 +1078,30 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- https://badges.roblox.com/v1/universes/7006259506/badges?limit=100&sortOrder=Asc  -- unibadges: item
 
     if string.match(url, "^https?://games%.roblox%.com/v1/games%?universeIds=[0-9]+$") then
-      check("https://www.roblox.com/games/badges-section/" .. item_value)
-      check("https://web.roblox.com/games/badges-section/" .. item_value)
       check("https://games.roblox.com/v1/games/recommendations/game/" .. item_value .. "?maxRows=6")
       check("https://apis.roblox.com/asset-text-filter-settings/public/universe/" .. item_value)
 
-      discover_item(discovered_items, "unibadges:" .. tostring(item_value))
+      -- check if badges exist on the game
+      check("https://badges.roblox.com/v1/universes/".. item_value .."/badges")
     end
+
+    -- universe badges start --
+    
+    -- check if universe has badges --
+    -- i want to avoid the wrong item value getting pushed
+    -- into these so we'll get the id from the match
+    local badge_uni_match = string.match(url, "^https?://badges%.roblox%.com/v1/universes/([0-9]+)/badges$")
+    if badge_uni_match then
+      json = cjson.decode(html)
+      if #json["data"] ~= 0 then
+        check("https://www.roblox.com/games/badges-section/" .. badge_uni_match)
+        check("https://web.roblox.com/games/badges-section/" .. badge_uni_match)
+        discover_item(discovered_items, "unibadges:" .. tostring(badge_uni_match))
+      end
+    end
+
+    -- universe badges end --
+
     -- universes end --
 
 

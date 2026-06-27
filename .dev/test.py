@@ -144,6 +144,11 @@ urls = [
     "https://www.roblox.com/games/1818",  # crossroads (roblox owned)
     "https://www.roblox.com/games/920587237",  # adopt me
 
+    # universes
+    "https://games.roblox.com/v1/games?universeIds=13058",  # crossroads (roblox owned)
+    "https://games.roblox.com/v1/games?universeIds=83858907",  # game with badges
+    "https://games.roblox.com/v1/games?universeIds=4043086988",  # hidden from public
+
     # groups
     "https://groups.roblox.com/v1/groups/1",  # group
     "https://groups.roblox.com/v1/groups/4285658",  # locked group
