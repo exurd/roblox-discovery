@@ -786,7 +786,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       for _, item in pairs(json["bundledItems"]) do
         local idStr = string.format("%.0f", item["id"])
         if item["type"] == "Asset" then
-          discover_item(discovered_items, "asset:" .. idStr)
+          discover_item(discovered_items, "economy:" .. idStr)
+          discover_item(discovered_items, "thumbnail:assets?assetIds=" .. idStr)
         end
         if item["type"] == "UserOutfit" then
           discover_item(discovered_items, "outfit:" .. idStr)
@@ -797,7 +798,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
       for _, new_id in pairs(json["data"]) do
         local assetIdStr = string.format("%.0f", new_id)
-        discover_item(discovered_items, "asset:" .. assetIdStr)
+        discover_item(discovered_items, "economy:" .. assetIdStr)
+        discover_item(discovered_items, "thumbnail:assets?assetIds=" .. assetIdStr)
       end
     end
     if string.match(url, "^https?://catalog%.roblox%.com/v2/recommendations/bundles%?") then
@@ -952,7 +954,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         local rootPlaceId = string.format("%.0f", entry["rootPlace"]["id"])
         discover_item(discovered_items, "universe:" .. universeId)
         discover_item(discovered_items, "user:" .. creatorId)
-        discover_item(discovered_items, "asset:" .. rootPlaceId)
+        discover_item(discovered_items, "place:" .. rootPlaceId)
+        discover_item(discovered_items, "economy:" .. rootPlaceId)
       end
 
       local nextpagecursor = json["nextPageCursor"]
@@ -968,7 +971,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       if #json["data"] ~= 0 then
         for _, entry in pairs(json["data"]) do
           local assetId = string.format("%.0f", entry["asset"]["id"])
-          discover_item(discovered_items, "asset:" .. assetId)
+          discover_item(discovered_items, "economy:" .. assetId)
+          discover_item(discovered_items, "thumbnail:assets?assetIds=" .. assetId)
           -- check if group or user
           local userId = entry["creator"]["userId"]
           if userId ~= nil then
@@ -1010,7 +1014,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
             for _, entry in pairs(json["data"]) do
               if entry["itemType"] == "Asset" then
                 local assetId = string.format("%.0f", entry["id"])
-                discover_item(discovered_items, "asset:" .. assetId)
+                discover_item(discovered_items, "economy:" .. assetId)
+                discover_item(discovered_items, "thumbnail:assets?assetIds=" .. assetId)
               end
               local ctId = string.format("%.0f", entry["creatorTargetId"])
               if entry["creatorType"] == "User" then
@@ -1022,12 +1027,14 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
           elseif utils.find(vars.ASSET_TYPES_CATALOG_FAVORITES_DEVTYPES, tonumber(asset_type)) then
             for _, entry in pairs(json["data"]) do
               local assetId = string.format("%.0f", entry["id"])
-              discover_item(discovered_items, "asset:" .. assetId)
+              discover_item(discovered_items, "economy:" .. assetId)
+              discover_item(discovered_items, "thumbnail:assets?assetIds=" .. assetId)
             end
           else
             for _, entry in pairs(json["data"]) do
               local assetId = string.format("%.0f", entry["assetId"])
-              discover_item(discovered_items, "asset:" .. assetId)
+              discover_item(discovered_items, "economy:" .. assetId)
+              discover_item(discovered_items, "thumbnail:assets?assetIds=" .. assetId)
             end
         end
 
@@ -1052,7 +1059,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
       for _, data in pairs(json["data"]) do
         local assetIdStr = string.format("%.0f", data["assetId"])
-        discover_item(discovered_items, "asset:" .. assetIdStr)
+        discover_item(discovered_items, "economy:" .. assetIdStr)
+        discover_item(discovered_items, "thumbnail:assets?assetIds=" .. assetIdStr)
       end
 
       local nextpagecursor = json["nextPageCursor"]
@@ -1067,7 +1075,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
 
       for _, gamepass in pairs(json["gamePasses"]) do
-        discover_item(discovered_items, "asset:" .. string.format("%.0f", gamepass["iconAssetId"]))
+        discover_item(discovered_items, "economy:" .. string.format("%.0f", gamepass["iconAssetId"]))
+        discover_item(discovered_items, "thumbnail:assets?assetIds=" .. string.format("%.0f", gamepass["iconAssetId"]))
         discover_item(discovered_items, string.lower(gamepass["creator"]["creatorType"]) .. ":" .. string.format(gamepass["creator"]["creatorId"]))
       end
 
@@ -1099,7 +1108,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
       for _, new_id in pairs(json["assetIds"]) do
         local assetIdStr = string.format("%.0f", new_id)
-        discover_item(discovered_items, "asset:" .. assetIdStr)
+        discover_item(discovered_items, "economy:" .. assetIdStr)
+        discover_item(discovered_items, "thumbnail:assets?assetIds=" .. assetIdStr)
       end
     end
 
@@ -1185,7 +1195,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://badges%.roblox%.com/v1/badges/[0-9]+$") then
       json = cjson.decode(html)
 
-      discover_item(discovered_items, "asset:" .. string.format("%.0f", json["iconImageId"]))
+      discover_item(discovered_items, "economy:" .. string.format("%.0f", json["iconImageId"]))
       discover_item(discovered_items, "universe:" .. string.format("%.0f", json["awardingUniverse"]["id"]))
       discover_item(discovered_items, "place:" .. string.format("%.0f", json["awardingUniverse"]["rootPlaceId"]))
 
@@ -1258,8 +1268,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       if #json["developerProducts"] ~= 0 then
         for _, entry in pairs(json["developerProducts"]) do
           discover_item(discovered_items, "thumbnail:developer-products/icons?developerProductIds=" .. string.format("%.0f", entry["DeveloperProductId"]))
+          discover_item(discovered_items, "economy:" .. string.format("%.0f", entry["IconImageAssetId"]))
           discover_item(discovered_items, "thumbnail:assets?assetIds=" .. string.format("%.0f", entry["IconImageAssetId"]))
-          discover_item(discovered_items, "asset:" .. string.format("%.0f", entry["IconImageAssetId"]))
         end
       end
 
