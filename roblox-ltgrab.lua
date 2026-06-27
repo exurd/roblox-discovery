@@ -110,6 +110,7 @@ find_item = function(url)
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="catalog",
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Bundle$"]="bundle",
     ["^https?://badges%.roblox%.com/v1/badges/([0-9]+)$"]="badge",
+    ["^https?://apis%.roblox%.com/game%-passes/v1/game%-passes/([0-9]+)/product%-info$"]="gamepass",
 
     -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
@@ -1075,6 +1076,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
 
       for _, gamepass in pairs(json["gamePasses"]) do
+        discover_item(discovered_items, "gamepass:" .. string.format("%.0f", gamepass["gamePassId"]))
         discover_item(discovered_items, "economy:" .. string.format("%.0f", gamepass["iconAssetId"]))
         discover_item(discovered_items, "thumbnail:assets?assetIds=" .. string.format("%.0f", gamepass["iconAssetId"]))
         discover_item(discovered_items, string.lower(gamepass["creator"]["creatorType"]) .. ":" .. string.format(gamepass["creator"]["creatorId"]))
@@ -1240,11 +1242,16 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- places end --
 
 
-    -- gamepasses start --
-    -- TODO: implement
-    -- https://www.roblox.com/game-pass/205379487/Lucky
-    -- https://apis.roblox.com/game-passes/v1/game-passes/205379487/product-info
-    -- gamepasses end
+    -- gamepasses/game pass start --
+
+    if string.match(url, "^https?://apis%.roblox%.com/game%-passes/v1/game%-passes/[0-9]+/product%-info$") then
+      json = cjson.decode(html)
+      discover_item(discovered_items, "economy:" .. string.format("%.0f", json["IconImageAssetId"]))
+      discover_item(discovered_items, "thumbnail:assets?assetIds=" .. string.format("%.0f", json["IconImageAssetId"]))
+      discover_item(discovered_items, string.lower(json["Creator"]["CreatorType"]) .. ":" .. string.format(json["Creator"]["Id"]))
+    end
+    
+    -- gamepasses/game pass end --
 
 
     -- universes start --

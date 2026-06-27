@@ -175,6 +175,9 @@ urls = [
     "https://games.roblox.com/v1/games?universeIds=4043086988",  # hidden from public
     "https://games.roblox.com/v1/games?universeIds=2440500124",  # game with developer products
 
+    # gamepasses
+    "https://apis.roblox.com/game-passes/v1/game-passes/205379487/product-info",
+
     # groups
     "https://groups.roblox.com/v1/groups/1",  # group
     "https://groups.roblox.com/v1/groups/4285658",  # locked group
