@@ -120,6 +120,9 @@ def test(url):
         sys.exit(1)
     elif code == 4:
         f = False
+        if re.search(r'[+-]?\d+\.\d+[eE][+-]?\d+', output):
+            print("Detected scientific numbers in output. Check output.")
+            f = True
         if "Aborting item" in output:
             print("Test failed; item was aborted! Check output.")
             f = True

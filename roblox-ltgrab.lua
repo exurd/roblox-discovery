@@ -522,7 +522,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
       local creator_type = json["Creator"]["CreatorType"]
       local creator_id = json["Creator"]["CreatorTargetId"]
-      discover_item(discovered_items, string.lower(creator_type) .. ":" .. tostring(creator_id))
+      discover_item(discovered_items, string.lower(creator_type) .. ":" .. string.format("%.0f", creator_id))
       -- should i use catalog apis' collectableitemid or this ones'?
       -- if json["CollectibleItemId"] ~= nil then
       --   -- check("https://economy.roblox.com/v1/assets/1149615185/resale-data")
@@ -538,7 +538,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
       local creator_type = json["Creator"]["CreatorType"]
       local creator_id = json["Creator"]["CreatorTargetId"]
-      discover_item(discovered_items, string.lower(creator_type) .. ":" .. tostring(creator_id))
+      discover_item(discovered_items, string.lower(creator_type) .. ":" .. string.format("%.0f", creator_id))
       if json["CollectibleItemId"] ~= nil then
         discover_item(discovered_items, "collectableitem:" .. tostring(json["CollectibleItemId"]))
       end
@@ -764,7 +764,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://catalog.roblox.com/v1/catalog/items/".. item_value .."/details?itemType=asset")  -- website's webpack and .js script have two different api requests, one being lower case and the other Sentence case...
       json = cjson.decode(html)
       local creator_id = json["creatorId"] or json["creatorTargetId"]
-      discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. tostring(creator_id))
+      discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. string.format("%.0f", creator_id))
       check("https://www.roblox.com/catalog/" .. item_value)
       check("https://web.roblox.com/catalog/" .. item_value)
       check("https://catalog.roblox.com/v1/favorites/assets/" .. item_value .. "/count")
@@ -777,7 +777,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
 
       local creator_id = json["creatorId"] or json["creatorTargetId"]
-      discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. tostring(creator_id))
+      discover_item(discovered_items, string.lower(json["creatorType"]) .. ":" .. string.format("%.0f", creator_id))
 
       check("https://www.roblox.com/bundles/" .. item_value)
       check("https://web.roblox.com/bundles/" .. item_value)
@@ -841,14 +841,14 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- check("https://www.roblox.com/users/" .. item_value .. "/friends")
       check("https://friends.roblox.com/v1/users/" .. item_value .. "/friends/find?limit=50")
 
-      discover_item(discovered_items, "user_followers:" .. tostring(item_value))
+      discover_item(discovered_items, "user_followers:" .. string.format("%.0f", item_value))
       -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Desc&limit=100")
-      discover_item(discovered_items, "user_following:" .. tostring(item_value))
+      discover_item(discovered_items, "user_following:" .. string.format("%.0f", item_value))
       -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followings?sortOrder=Desc&limit=100")
 
       -- games
       -- check("https://games.roblox.com/v2/users/" .. item_value .. "/games")
-      discover_item(discovered_items, "user_games:" .. tostring(item_value))
+      discover_item(discovered_items, "user_games:" .. string.format("%.0f", item_value))
 
       -- avatar
       check("https://avatar.roblox.com/v1/users/" .. item_value .. "/currently-wearing")
@@ -869,7 +869,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- favorites could be privated one day, so to keep this working
       -- (and to avoid those tedious rate limits) that task will be done
       -- in a different item
-      discover_item(discovered_items, "user_favorites:" .. tostring(item_value))
+      discover_item(discovered_items, "user_favorites:" .. string.format("%.0f", item_value))
     end
 
     -- {"canView":false}
@@ -878,9 +878,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
       print(json["canView"])
       if json["canView"] == true then
-        discover_item(discovered_items, "user_inventory:" .. tostring(item_value))
-        discover_item(discovered_items, "user_bundles:" .. tostring(item_value))
-        discover_item(discovered_items, "user_gamepasses:" .. tostring(item_value))
+        discover_item(discovered_items, "user_inventory:" .. string.format("%.0f", item_value))
+        discover_item(discovered_items, "user_bundles:" .. string.format("%.0f", item_value))
+        discover_item(discovered_items, "user_gamepasses:" .. string.format("%.0f", item_value))
       end
     end
 
@@ -903,7 +903,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://friends%.roblox%.com/v1/users/[0-9]+/friends/find") then
       json = cjson.decode(html)
       for _, data in pairs(json["PageItems"]) do
-        discover_item(discovered_items, "user:" .. tostring(data["id"]))
+        discover_item(discovered_items, "user:" .. string.format("%.0f", data["id"]))
       end
       check_cursor(url, json, "NextCursor")
     end
@@ -912,7 +912,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
       for _, data in pairs(json["data"]) do
-        discover_item(discovered_items, "user:" .. tostring(data["id"]))
+        discover_item(discovered_items, "user:" .. string.format("%.0f", data["id"]))
       end
     end
 
@@ -1100,16 +1100,16 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "/v1/users/[0-9]+/groups/roles$") then
       json = cjson.decode(html)
       for _, data in pairs(json["data"]) do
-        discover_item(discovered_items, "group:" .. tostring(data["group"]["id"]))
+        discover_item(discovered_items, "group:" .. string.format("%.0f", data["group"]["id"]))
         if data["group"]["owner"] ~= cjson.null then
-          discover_item(discovered_items, "user:" .. tostring(data["group"]["owner"]["userId"]))
+          discover_item(discovered_items, "user:" .. string.format("%.0f", data["group"]["owner"]["userId"]))
         end
       end
     end
     if string.match(url, "/v2/users/[0-9]+/games$") then
       json = cjson.decode(html)
       for _, data in pairs(json["data"]) do
-        discover_item(discovered_items, string.lower(data["creator"]["type"]) .. ":" .. tostring(data["creator"]["id"]))
+        discover_item(discovered_items, string.lower(data["creator"]["type"]) .. ":" .. string.format("%.0f", data["creator"]["id"]))
       end
     end
     if string.match(url, "/v1/users/[0-9]+/currently%-wearing$") then
@@ -1153,21 +1153,21 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "/v1/groups/[0-9]+/roles$") then
       json = cjson.decode(html)
       for _, role in pairs(json["roles"]) do  -- TODO: TEST
-        discover_item(discovered_items, "group_role:" .. tostring(json["groupId"]) .. ":" .. tostring(role["id"]))
+        discover_item(discovered_items, "group_role:" .. string.format("%.0f", json["groupId"]) .. ":" .. string.format("%.0f", role["id"]))
       end
     end
     if string.match(url, "/v1/groups/[0-9]+/roles/[0-9]+/users%?") then  -- group:*:role:*
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
       for _, data in pairs(json["data"]) do
-        discover_item(discovered_items, "user:" .. tostring(data["userId"]))
+        discover_item(discovered_items, "user:" .. string.format("%.0f", data["userId"]))
       end
     end
     if string.match(url, "/v1/search/items%?") then
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
       for _, data in pairs(json["data"]) do
-        discover_item(discovered_items, string.lower(data["itemType"]) .. ":" .. tostring(data["id"]))
+        discover_item(discovered_items, string.lower(data["itemType"]) .. ":" .. string.format("%.0f", data["id"]))
       end
     end
     if string.match(url, "/v1/groups/[0-9]+/relationships/allies%?") then
@@ -1175,7 +1175,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       local count = 0
       for _, data in pairs(json["relatedGroups"]) do
         count = count + 1
-        discover_item(discovered_items, "group:" .. tostring(data["id"]))
+        discover_item(discovered_items, "group:" .. string.format("%.0f", data["id"]))
       end
       if count > 0 then
         check(increment_param(url, "startRowIndex", "0", json["nextRowIndex"]))
@@ -1202,22 +1202,19 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://badges%.roblox%.com/v1/badges/[0-9]+$") then
       json = cjson.decode(html)
 
-      local iconIdStr = string.format("%.0f", json["iconImageId"])
-      local uniIdStr = string.format("%.0f", json["awardingUniverse"]["id"])
-      local rootPlaceIdStr = string.format("%.0f", json["awardingUniverse"]["rootPlaceId"])
-      discover_item(discovered_items, "asset:" .. tostring(iconIdStr))
-      discover_item(discovered_items, "universe:" .. tostring(uniIdStr))
-      discover_item(discovered_items, "place:" .. tostring(rootPlaceIdStr))
+      discover_item(discovered_items, "asset:" .. string.format("%.0f", json["iconImageId"]))
+      discover_item(discovered_items, "universe:" .. string.format("%.0f", json["awardingUniverse"]["id"]))
+      discover_item(discovered_items, "place:" .. string.format("%.0f", json["awardingUniverse"]["rootPlaceId"]))
 
       check("https://www.roblox.com/badges/" .. item_value)
       check("https://web.roblox.com/badges/" .. item_value)
-      discover_item(discovered_items, "thumbnail:badges/icons?badgeIds=" .. tostring(item_value))
+      discover_item(discovered_items, "thumbnail:badges/icons?badgeIds=" .. string.format("%.0f", item_value))
       if tonumber(item_value) < 2124421087 then
         -- badges below this number were part of the asset types
         -- check asset apis and thumbnail api
         check("https://catalog.roblox.com/v1/favorites/assets/"..item_value.."/count")
-        discover_item(discovered_items, "economy:" .. tostring(item_value))
-        discover_item(discovered_items, "thumbnail:assets?assetIds=" .. tostring(item_value))
+        discover_item(discovered_items, "economy:" .. string.format("%.0f", item_value))
+        discover_item(discovered_items, "thumbnail:assets?assetIds=" .. string.format("%.0f", item_value))
       end
     end
     -- badges end --
@@ -1231,8 +1228,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       check("https://www.roblox.com/games/votingservice/" .. item_value)
       check("https://apis.roblox.com/universes/v1/places/"..item_value.."/universe")  -- universe: item
 
-      discover_item(discovered_items, "economy:" .. tostring(item_value))
-      discover_item(discovered_items, "thumbnail:places/gameicons?placeIds=" .. tostring(item_value))
+      discover_item(discovered_items, "economy:" .. string.format("%.0f", item_value))
+      discover_item(discovered_items, "thumbnail:places/gameicons?placeIds=" .. string.format("%.0f", item_value))
     end
     if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+$") then
       place_check()
@@ -1245,7 +1242,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://apis%.roblox%.com/universes/v1/places/[0-9]+/universe$") then
       json = cjson.decode(html)
       local uniIdStr = string.format("%.0f", json["universeId"])
-      discover_item(discovered_items, "universe:" .. tostring(uniIdStr))
+      discover_item(discovered_items, "universe:" .. string.format("%.0f", uniIdStr))
     end
     -- places end --
 
@@ -1282,7 +1279,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       if #json["data"] ~= 0 then
         check("https://www.roblox.com/games/badges-section/" .. badge_uni_match)
         check("https://web.roblox.com/games/badges-section/" .. badge_uni_match)
-        discover_item(discovered_items, "unibadges:" .. tostring(badge_uni_match))
+        discover_item(discovered_items, "unibadges:" .. string.format("%.0f", badge_uni_match))
       end
     end
 
