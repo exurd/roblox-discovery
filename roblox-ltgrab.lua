@@ -130,8 +130,8 @@ find_item = function(url)
     ["^https?://games%.roblox%.com/v1/games%?universeIds=([0-9]+)$"]="universe",
 
     -- assetdel --
-    ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)$"]="asset",  -- for discovering how many versions (asset:16688968)
-    ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+/version/[0-9]+)$"]="assetver"  -- for archiving  (assetver:16688968_0)
+    -- ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+)$"]="asset",  -- for discovering how many versions (asset:16688968)
+    -- ["^https?://assetdelivery%.roblox%.com/v2/assetId/([0-9]+/version/[0-9]+)$"]="assetver"  -- for archiving  (assetver:16688968_0)
   }) do
     value = string.match(url, pattern)
     type_ = name
@@ -169,6 +169,13 @@ find_item = function(url)
   if ug_id then
     value = ug_id .. ":" .. ug_esid
     type_ = "user_gamepasses-cursored"
+  end
+  
+  -- "^https?://apis%.roblox%.com/developer%-products/v2/universes/([0-9]+)/developerproducts%?"
+  local dpu_id, dpu_cursor = string.match(url, "^https?://apis%.roblox%.com/developer%-products/v2/universes/([0-9]+)/developerproducts%?limit=100&cursor=(.*)$")
+  if dpu_id then
+    value = dpu_id .. ":" .. dpu_cursor
+    type_ = "universe_developerproducts"
   end
 
   -- NEEDS AUTHENTICATION TO WORK
@@ -664,7 +671,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       local prefix_type = url:match("^https?://thumbnails%.roblox%.com/v1/([%w%?%/%-]+)%=")
       local sizes = vars.THUMBNAIL_SIZES
       if utils.find(vars.SLIM_ITEMS, prefix_type) == true then
-        print("DING DING! CORRECT")
         sizes = vars.THUMBNAIL_SIZES_SLIM
       end
       if prefix_type == "games/multiget/thumbnails?universeIds" then
@@ -1234,16 +1240,35 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     -- universes start --
 
     -- TODO: urls to add:
-    -- https://apis.roblox.com/developer-products/v1/universes/7360842628/developerproducts?pageNumber=1&pageSize=50
     -- https://badges.roblox.com/v1/universes/7006259506/badges?limit=100&sortOrder=Asc  -- unibadges: item
 
     if string.match(url, "^https?://games%.roblox%.com/v1/games%?universeIds=[0-9]+$") then
       check("https://games.roblox.com/v1/games/recommendations/game/" .. item_value .. "?maxRows=6")
       check("https://apis.roblox.com/asset-text-filter-settings/public/universe/" .. item_value)
+      check("https://apis.roblox.com/developer-products/v2/universes/"..item_value.."/developerproducts?limit=100")
 
       -- check if badges exist on the game
       check("https://badges.roblox.com/v1/universes/".. item_value .."/badges")
     end
+
+    -- universe developer products start --
+    local universe_id = string.match(url, "^https?://apis%.roblox%.com/developer%-products/v2/universes/([0-9]+)/developerproducts%?")
+    if universe_id and status_code ~= 403 and status_code ~= 429 then
+      json = cjson.decode(html)
+      if #json["developerProducts"] ~= 0 then
+        for _, entry in pairs(json["developerProducts"]) do
+          discover_item(discovered_items, "thumbnail:developer-products/icons?developerProductIds=" .. string.format("%.0f", entry["DeveloperProductId"]))
+          discover_item(discovered_items, "thumbnail:assets?assetIds=" .. string.format("%.0f", entry["IconImageAssetId"]))
+          discover_item(discovered_items, "asset:" .. string.format("%.0f", entry["IconImageAssetId"]))
+        end
+      end
+
+      local nextpagecursor = json["nextPageCursor"]
+        if nextpagecursor ~= cjson.null then
+          discover_item(discovered_items, "universe_developerproducts:"..universe_id..":"..nextpagecursor)
+        end
+    end
+    -- universe developer products end --
 
     -- universe badges start --
     

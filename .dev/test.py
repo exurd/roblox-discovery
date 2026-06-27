@@ -173,6 +173,7 @@ urls = [
     "https://games.roblox.com/v1/games?universeIds=13058",  # crossroads (roblox owned)
     "https://games.roblox.com/v1/games?universeIds=83858907",  # game with badges
     "https://games.roblox.com/v1/games?universeIds=4043086988",  # hidden from public
+    "https://games.roblox.com/v1/games?universeIds=2440500124",  # game with developer products
 
     # groups
     "https://groups.roblox.com/v1/groups/1",  # group
