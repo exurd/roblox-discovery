@@ -48,8 +48,14 @@ mod.ASSET_TYPES_CATALOG = {
   12, -- Pants
   13, -- Decal
   -- 16, -- Avatar (Invalid type)
+  18, -- Face
   19, -- Gear
   24, -- Animation
+  27, -- Torso
+  28, -- RightArm
+  29, -- LeftArm
+  30, -- LeftLeg
+  31, -- RightLeg
   38, -- Plugin
   40, -- MeshPart
   41, -- HairAccessory
@@ -66,6 +72,7 @@ mod.ASSET_TYPES_CATALOG = {
   53, -- RunAnimation
   54, -- SwimAnimation
   55, -- WalkAnimation
+  56, -- PoseAnimation
   61, -- EmoteAnimation
   62, -- Video
   64, -- TShirtAccessory
@@ -79,6 +86,7 @@ mod.ASSET_TYPES_CATALOG = {
   72, -- DressSkirtAccessory
   76, -- EyebrowAccessory
   77, -- EyelashAccessory
+  78, -- MoodAnimation
   88, -- FaceMakeup
   89, -- LipMakeup
   90 -- EyeMakeup
