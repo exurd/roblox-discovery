@@ -151,6 +151,11 @@ urls = [
     # TODO: can't find an example for this...
     # "https://catalog.roblox.com/v1/favorites/users/[USER_ID]/favorites/[ASSET_TYPE_ID]/assets?limit=100&sortOrder=Desc&cursor=[CURSOR]",
 
+    # inventory
+    "https://www.roblox.com/users/29666286/inventory",  # account with open inventory
+    # cursored
+    "https://inventory.roblox.com/v2/users/29666286/inventory/29?limit=100&sortOrder=Desc&cursor=1125899906903333_1_6066b3722af59f60df4523adf2e21143",
+
     # places
     "https://www.roblox.com/games/1818",  # crossroads (roblox owned)
     "https://www.roblox.com/games/920587237",  # adopt me

@@ -115,6 +115,7 @@ find_item = function(url)
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
     -- deals with _gamefavorites, _toolboxfavorites and _catalogfavorites
     ["^https?://www%.roblox%.com/users/([0-9]+)/favorites$"]="user_favorites",
+    ["^https?://www%.roblox%.com/users/([0-9]+)/inventory$"]="user_inventory",
 
     -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
@@ -138,28 +139,46 @@ find_item = function(url)
     end
   end
   -- cursored (or alternatively "cursed") items
-  -- user_badgesinventory --
-  -- dammit, this api is auth locked...
-  -- local ubi_id, ubi_cursor = string.match(url, "^https?://badges%.roblox%.com/v1/users/([0-9]+)/badges%?limit=100&cursor=(.*)$")
-  -- if ubi_id then
-  --   value = ubi_id .. ":" .. ubi_cursor
-  --   type_ = "user_badgesinventory"
-  -- end
+
   local gf_id, gf_cursor = string.match(url, "^https?://games%.roblox%.com/v2/users/([0-9]+)/favorite/games%?limit=100&cursor=(.*)$")
   if gf_id then
     value = gf_id .. ":" .. gf_cursor
     type_ = "user_gamefavorites"
   end
+
   local tbf_id, tbf_assettype, tbf_cursor = string.match(url, "^https?://apis%.roblox%.com/toolbox%-service/v1/favorites/user/([0-9]+)/([0-9]+)%?cursor=(.*)$")
   if tbf_id then
     value = tbf_id .. ":" .. tbf_assettype .. ":" .. tbf_cursor
     type_ = "user_toolboxfavorites"
   end
+
   local cf_id, cf_assettype, cf_cursor = string.match(url, "^https?://catalog%.roblox%.com/v1/favorites/users/([0-9]+)/favorites/([0-9]+)/assets%?limit=100&sortOrder=Desc&cursor=(.*)$")
   if cf_id then
     value = cf_id .. ":" .. cf_assettype .. ":" .. cf_cursor
     type_ = "user_catalogfavorites"
   end
+
+  local ui_id, ui_assettype, ui_cursor = string.match(url, "^https?://inventory%.roblox%.com/v2/users/([0-9]+)/inventory/([0-9]+)%?limit=100&sortOrder=Desc&cursor=(.*)$")
+  if ui_id then
+    value = ui_id .. ":" .. ui_assettype .. ":" .. ui_cursor
+    type_ = "user_inventory-cursored"
+  end
+
+  -- NEEDS AUTHENTICATION TO WORK
+  -- local bf_id, bf_assettype, bf_cursor = string.match(url, "^https?://catalog%.roblox%.com/v1/favorites/users/([0-9]+)/favorites/([0-9]+)/bundles%?itemsPerPage=100&sortOrder=Desc&cursor=(.*)$")
+  -- if bf_id then
+  --   value = bf_id .. ":" .. bf_assettype .. ":" .. bf_cursor
+  --   type_ = "user_bundlefavorites"
+  -- end
+
+  -- NEEDS AUTHENTICATION TO WORK
+  -- local ubi_id, ubi_cursor = string.match(url, "^https?://badges%.roblox%.com/v1/users/([0-9]+)/badges%?limit=100&cursor=(.*)$")
+  -- if ubi_id then
+  --   value = ubi_id .. ":" .. ubi_cursor
+  --   type_ = "user_badgesinventory"
+  -- end
+
+
   if value and type_ then
     return {
       ["value"]=value,
@@ -851,15 +870,14 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://inventory%.roblox%.com/v1/users/[0-9]+/can-view-inventory$") then
       json = cjson.decode(html)
       print(json["canView"])
-      if json["canView"] == true then  -- TODO: TEST THIS PART
+      if json["canView"] == true then
         discover_item(discovered_items, "user_inventory:" .. tostring(item_value))
-        -- check("https://inventory.roblox.com/v2/users/".. item_value .."/inventory/" .. tostring(assetType) .. "?cursor=&limit=100&sortOrder=Desc")
-        discover_item(discovered_items, "user_bundles" .. tostring(item_value))
+        discover_item(discovered_items, "user_bundles:" .. tostring(item_value))
         discover_item(discovered_items, "user_gamepasses:" .. tostring(item_value))
       end
     end
 
-    -- auth locked api, cannot be used anymore
+    -- NEEDS AUTHENTICATION TO WORK
     -- -- player badges in user inventory *CHECK*
     -- -- if empty, then user has not collected any badges or has a private inventory:
     --   -- {"previousPageCursor":null,"nextPageCursor":null,"data":[]}
@@ -898,9 +916,14 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- we only need to loop through the asset types once,
       -- then we can have each of them be it's own item
       -- user_catalogfavorites:
-      for _, assetType in pairs(vars.ASSET_TYPES_CATALOG) do
+      for _, assetType in pairs(vars.ASSET_TYPES_CATALOG_FAVORITES) do
         check("https://catalog.roblox.com/v1/favorites/users/"..item_value.."/favorites/"..assetType.."/assets?limit=100&sortOrder=Desc")
       end
+      -- NEEDS AUTHENTICATION TO WORK
+      -- -- user_bundlefavorites:
+      -- for _, assetType in pairs(vars.BUNDLE_TYPES_CATALOG) do
+      --   check("https://catalog.roblox.com/v1/favorites/users/"..item_value.."/favorites/"..assetType.."/bundles?itemsPerPage=100&sortOrder=Desc")
+      -- end
       -- user_toolboxfavorites:
       for _, assetType in pairs(vars.ASSET_TYPES_CREATORSTORE) do
         check("https://apis.roblox.com/toolbox-service/v1/favorites/user/" .. item_value .. "/" .. assetType)
@@ -1027,16 +1050,28 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
     -- favorites end --
 
-    -- inventory
-    if string.match(url, "^https?://inventory%.roblox%.com/v2/users/[0-9]+/inventory/") then
+    -- inventory start --
+    if string.match(url, "^https?://www%.roblox%.com/users/[0-9]+/inventory$") then
+      for _, assetType in pairs(vars.ASSET_TYPES_CATALOG_INVENTORY) do
+        check("https://inventory.roblox.com/v2/users/".. item_value .."/inventory/" .. assetType .. "?limit=100&sortOrder=Desc")
+      end
+    end
+    
+    local user_id, asset_type = string.match(url, "^https?://inventory%.roblox%.com/v2/users/([0-9]+)/inventory/([0-9]+)%?")
+    if (user_id and asset_type) and status_code ~= 403 and status_code ~= 429 then
       json = cjson.decode(html)
       for _, data in pairs(json["data"]) do
         local assetIdStr = string.format("%.0f", data["assetId"])
         discover_item(discovered_items, "asset:" .. assetIdStr)
-        -- discover_item(discovered_items, "user:" .. tostring(data["Creator"]["Id"]))
       end
-      check_cursor(url, json, "nextPageCursor")
+
+      local nextpagecursor = json["nextPageCursor"]
+      if nextpagecursor ~= cjson.null then
+        discover_item(discovered_items, "user_inventory-cursored:"..user_id..":"..asset_type..":"..nextpagecursor)
+      end
     end
+
+    -- inventory end --
 
     if string.match(url, "/v1/users/[0-9]+/groups/roles$") then
       json = cjson.decode(html)
@@ -1060,6 +1095,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_item(discovered_items, "asset:" .. assetIdStr)
       end
     end
+
     -- user end --
 
 

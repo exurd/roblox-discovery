@@ -34,7 +34,7 @@ mod.THUMBNAIL_FORMATS = {"Png", "Jpeg", "Webp"}
 
 -- asset type vars start --
 
-mod.ASSET_TYPES_CATALOG = {
+mod.ASSET_TYPES_CATALOG_FAVORITES = {
   -- from https://inventory.roblox.com/v1/users/{USER_ID}/categories/favorites
   -- (strange that it's not a standalone api and needs a user id?
   --  keep this in mind when edge cases appear)
@@ -56,6 +56,65 @@ mod.ASSET_TYPES_CATALOG = {
   29, -- LeftArm
   30, -- LeftLeg
   31, -- RightLeg
+  38, -- Plugin
+  40, -- MeshPart
+  41, -- HairAccessory
+  42, -- FaceAccessory
+  43, -- NeckAccessory
+  44, -- ShoulderAccessory
+  45, -- FrontAccessory
+  46, -- BackAccessory
+  47, -- WaistAccessory
+  48, -- ClimbAnimation
+  50, -- FallAnimation
+  51, -- IdleAnimation
+  52, -- JumpAnimation
+  53, -- RunAnimation
+  54, -- SwimAnimation
+  55, -- WalkAnimation
+  56, -- PoseAnimation
+  61, -- EmoteAnimation
+  62, -- Video
+  64, -- TShirtAccessory
+  65, -- ShirtAccessory
+  66, -- PantsAccessory
+  67, -- JacketAccessory
+  68, -- SweaterAccessory
+  69, -- ShortsAccessory
+  70, -- LeftShoeAccessory
+  71, -- RightShoeAccessory
+  72, -- DressSkirtAccessory
+  76, -- EyebrowAccessory
+  77, -- EyelashAccessory
+  78, -- MoodAnimation
+  88, -- FaceMakeup
+  89, -- LipMakeup
+  90 -- EyeMakeup
+}
+mod.ASSET_TYPES_CATALOG_INVENTORY = {
+  -- from https://inventory.roblox.com/v1/users/{USER_ID}/categories/favorites
+  -- (strange that it's not a standalone api and needs a user id?
+  --  keep this in mind when edge cases appear)
+  -- any new asset types that support catalog api should be added here
+  2, -- TShirt
+  3, -- Audio
+  8, -- Hat
+  9, -- Place (Invalid type), different api used for this
+  10, -- Model (Hidden?)
+  11, -- Shirt
+  12, -- Pants
+  13, -- Decal
+  17, -- Head
+  -- 16, -- Avatar (Invalid type)
+  18, -- Face
+  19, -- Gear
+  24, -- Animation
+  27, -- Torso
+  28, -- RightArm
+  29, -- LeftArm
+  30, -- LeftLeg
+  31, -- RightLeg
+  32, -- Package
   38, -- Plugin
   40, -- MeshPart
   41, -- HairAccessory
