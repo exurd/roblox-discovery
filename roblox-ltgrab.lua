@@ -858,7 +858,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- {"previousPageCursor":null,"nextPageCursor":null,"data":[]}
     if string.match(url, "^https?://badges%.roblox%.com/v1/users/[0-9]+/badges$") then
       json = cjson.decode(html)
-      if json["data"] ~= {} then
+      if #json["data"] ~= 0 then
         discover_item(discovered_items, "user_badges:" .. tostring(item_value))
       end
     end
