@@ -117,8 +117,10 @@ find_item = function(url)
 
     -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
-    ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Asc"]="groupwall",
-    ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Desc"]="groupwall",
+    -- robloxgroups-grab has covered these, though v1 wasn't fully looked at.
+    -- also note that that project didn't cover everything that groups have
+    -- ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Asc"]="groupwall",
+    -- ["^https?://groups%.roblox%.com/v2/groups/([0-9]+)/wall/posts%?sortOrder=Desc"]="groupwall",
 
     -- games --
     ["^https?://www%.roblox%.com/games/([0-9]+)$"]="place",
