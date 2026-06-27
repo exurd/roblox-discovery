@@ -1139,7 +1139,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       -- and what seems to last for a very long time...
       -- check("https://groups.roblox.com/v2/groups/" .. item_value .. "/wall/posts")
 
-      -- TODO: thumbnail here
+      discover_item(discovered_items, "thumbnail:groups/icons?groupIds=" .. item_value)
     end
     if string.match(url, "/v1/groups/[0-9]+/name-history$") then
       json = cjson.decode(html)
