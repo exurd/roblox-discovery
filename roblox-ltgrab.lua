@@ -113,9 +113,10 @@ find_item = function(url)
 
     -- users --
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
+    ["^https?://www%.roblox%.com/users/([0-9]+)/inventory$"]="user_inventory",
+    ["^https?://apis%.roblox%.com/game%-passes/v1/users/([0-9]+)/game%-passes%?count=100$"]="user_gamepasses",
     -- deals with _gamefavorites, _toolboxfavorites and _catalogfavorites
     ["^https?://www%.roblox%.com/users/([0-9]+)/favorites$"]="user_favorites",
-    ["^https?://www%.roblox%.com/users/([0-9]+)/inventory$"]="user_inventory",
 
     -- groups --
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
@@ -162,6 +163,12 @@ find_item = function(url)
   if ui_id then
     value = ui_id .. ":" .. ui_assettype .. ":" .. ui_cursor
     type_ = "user_inventory-cursored"
+  end
+
+  local ug_id, ug_esid = string.match(url, "^https?://apis%.roblox%.com/game%-passes/v1/users/([0-9]+)/game%-passes%?count=100&exclusiveStartId=([0-9]+)$")
+  if ug_id then
+    value = ug_id .. ":" .. ug_esid
+    type_ = "user_gamepasses-cursored"
   end
 
   -- NEEDS AUTHENTICATION TO WORK
@@ -1068,6 +1075,23 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       local nextpagecursor = json["nextPageCursor"]
       if nextpagecursor ~= cjson.null then
         discover_item(discovered_items, "user_inventory-cursored:"..user_id..":"..asset_type..":"..nextpagecursor)
+      end
+    end
+
+    -- this api is very strange
+    local user_id = string.match(url, "^https?://apis%.roblox%.com/game%-passes/v1/users/([0-9]+)/game%-passes%?count=100")
+    if user_id and status_code ~= 403 and status_code ~= 429 then
+      json = cjson.decode(html)
+
+      for _, gamepass in pairs(json["gamePasses"]) do
+        discover_item(discovered_items, "asset:" .. string.format("%.0f", gamepass["iconAssetId"]))
+        discover_item(discovered_items, string.lower(gamepass["creator"]["creatorType"]) .. ":" .. string.format(gamepass["creator"]["creatorId"]))
+      end
+
+      -- get next exclusiveStartId
+      if #json["gamePasses"] == 100 then
+        local exclusiveStartId = json["gamePasses"][#json["gamePasses"]]["gamePassId"]
+        discover_item(discovered_items, "user_gamepasses-cursored:"..user_id..":"..exclusiveStartId)
       end
     end
 

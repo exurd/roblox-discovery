@@ -153,8 +153,12 @@ urls = [
 
     # inventory
     "https://www.roblox.com/users/29666286/inventory",  # account with open inventory
-    # cursored
+    # cursored inventory
     "https://inventory.roblox.com/v2/users/29666286/inventory/29?limit=100&sortOrder=Desc&cursor=1125899906903333_1_6066b3722af59f60df4523adf2e21143",
+    # gamepass inventory
+    "https://apis.roblox.com/game-passes/v1/users/29666286/game-passes?count=100",
+    # cursored gamepass inventory
+    "https://apis.roblox.com/game-passes/v1/users/29666286/game-passes?count=100&exclusiveStartId=11378339",
 
     # places
     "https://www.roblox.com/games/1818",  # crossroads (roblox owned)
