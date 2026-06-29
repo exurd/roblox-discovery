@@ -181,6 +181,9 @@ urls = [
     # groups
     "https://groups.roblox.com/v1/groups/1",  # group
     "https://groups.roblox.com/v1/groups/4285658",  # locked group
+    "https://groups.roblox.com/v1/groups/35946382",  # group with hidden members
+    "https://groups.roblox.com/v1/groups/15805004",  # group with games
+    "https://groups.roblox.com/v1/groups/12808043",  # group with loads of games
 
     # badges
     "https://badges.roblox.com/v1/badges/14417332",  # badge (as asset type)

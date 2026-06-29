@@ -178,6 +178,24 @@ find_item = function(url)
     type_ = "universe_developerproducts"
   end
 
+  local ggames_id, games_cursor = string.match(url, "^https?://games%.roblox%.com/v2/groups/([0-9]+)/games%?limit=100&sortOrder=Desc&cursor=(.*)$")
+  if ggames_id then
+    value = ggames_id .. ":" .. games_cursor
+    type_ = "group_games-cursored"
+  end
+
+  local gmemb_id, members_cursor = string.match(url, "^https?://groups%.roblox%.com/v1/groups/([0-9]+)/users%?limit=100&sortOrder=Desc&cursor=(.*)$")
+  if gmemb_id then
+    value = gmemb_id .. ":" .. members_cursor
+    type_ = "group_members-cursored"
+  end
+
+  local gwall_id, wall_cursor = string.match(url, "^https?://groups%.roblox%.com/v1/groups/([0-9]+)/wall/posts%?limit=100&sortOrder=Desc&cursor=(.*)$")
+  if gwall_id then
+    value = gwall_id .. ":" .. wall_cursor
+    type_ = "group_wall_v1-cursored"
+  end
+
   -- NEEDS AUTHENTICATION TO WORK
   -- SO IM NOT TOUCHING IT ANYMORE
   -- -- check("https://friends.roblox.com/v1/users/" .. item_value .. "/followers?sortOrder=Asc&limit=100")
@@ -1128,53 +1146,56 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
 
     -- group start --
+
     if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+$") then
       json = cjson.decode(html)
       if json["isLocked"] ~= true then
         check("https://groups.roblox.com/v1/groups/" .. item_value .. "/relationships/allies?maxRows=50&sortOrder=Asc&startRowIndex=0")  -- nextrowindex(? interesting)
-        check("https://groups.roblox.com/v1/groups/" .. item_value .. "/name-history")  -- TODO: pagecursor
+        check("https://groups.roblox.com/v1/groups/" .. item_value .. "/name-history")
+        check("https://groups.roblox.com/v1/groups/" .. item_value .. "/wall/posts?limit=100&sortOrder=Asc")
       end
       check("https://www.roblox.com/groups/" .. item_value)
       check("https://web.roblox.com/groups/" .. item_value)
+      check("https://groups.roblox.com/v2/groups?groupIds=" .. item_value)
       check("https://groups.roblox.com/v1/groups/" .. item_value .. "/roles")
-      -- check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership")
-      -- check("https://groups.roblox.com/v1/groups/" .. item_value .. "/membership?includeNotificationPreferences=true")
-      check("https://groups.roblox.com/v1/featured-content/event?groupId=" .. item_value)  -- TODO: find group with event
-      check("https://games.roblox.com/v2/groups/" .. item_value .. "/games?accessFilter=Public&cursor=&limit=50&sortOrder=Desc")
+      check("https://groups.roblox.com/v1/featured-content/event?groupId=" .. item_value)
       check("https://apis.roblox.com/community-links/v1/groups/" .. item_value .. "/community")
       check("https://catalog.roblox.com/v1/search/items?category=All&creatorTargetId=" .. item_value .. "&creatorType=Group&cursor=&limit=50&sortOrder=Desc&sortType=Updated")
-      -- check if group has wall posts
-      -- great, if you request the group wall api too many times it will 429,
-      -- and what seems to last for a very long time...
-      -- check("https://groups.roblox.com/v2/groups/" .. item_value .. "/wall/posts")
+      check("https://groups.roblox.com/v1/groups/" .. item_value .. "/users?limit=100&sortOrder=Desc")
+      check("https://games.roblox.com/v2/groups/" .. item_value .. "/games?limit=100&sortOrder=Desc")
 
       discover_item(discovered_items, "thumbnail:groups/icons?groupIds=" .. item_value)
     end
-    if string.match(url, "/v1/groups/[0-9]+/name-history$") then
+
+    if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+/name-history$") then
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
     end
-    if string.match(url, "/v1/groups/[0-9]+/roles$") then
+
+    if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+/roles$") then
       json = cjson.decode(html)
-      for _, role in pairs(json["roles"]) do  -- TODO: TEST
+      for _, role in pairs(json["roles"]) do
         discover_item(discovered_items, "group_role:" .. string.format("%.0f", json["groupId"]) .. ":" .. string.format("%.0f", role["id"]))
       end
     end
-    if string.match(url, "/v1/groups/[0-9]+/roles/[0-9]+/users%?") then  -- group:*:role:*
+
+    if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+/roles/[0-9]+/users%?") then  -- group:*:role:*
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
       for _, data in pairs(json["data"]) do
         discover_item(discovered_items, "user:" .. string.format("%.0f", data["userId"]))
       end
     end
-    if string.match(url, "/v1/search/items%?") then
+
+    if string.match(url, "^https?://groups%.roblox%.com/v1/search/items%?") then
       json = cjson.decode(html)
       check_cursor(url, json, "nextPageCursor")
       for _, data in pairs(json["data"]) do
         discover_item(discovered_items, string.lower(data["itemType"]) .. ":" .. string.format("%.0f", data["id"]))
       end
     end
-    if string.match(url, "/v1/groups/[0-9]+/relationships/allies%?") then
+
+    if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+/relationships/allies%?") then
       json = cjson.decode(html)
       local count = 0
       for _, data in pairs(json["relatedGroups"]) do
@@ -1185,20 +1206,56 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         check(increment_param(url, "startRowIndex", "0", json["nextRowIndex"]))
       end
     end
-    -- group walls
-    if string.match(url, "/v2/groups/[0-9]+/wall/posts$") then  -- wall check
+
+    if string.match(url, "^https?://groups%.roblox%.com/v2/groups/[0-9]+/wall/posts$") then  -- wall check
       json = cjson.decode(html)
       if not json["errors"] then
         discover_item(discovered_items, "groupwall:" .. item_value)
       end
     end
-    if string.match(url, "/v2/groups/[0-9]+/wall/posts%?sortOrder=") then
+
+    local groupgames_id = string.match(url, "^https?://games%.roblox%.com/v2/groups/([0-9]+)/games%?")
+    if groupgames_id then
       json = cjson.decode(html)
-      check_cursor(url, json, "nextPageCursor")
-      -- this is the rate limit message:
-      -- {"errors":[{"code":4,"message":"You are posting too fast, please try again in a few minutes."}]}
-      -- what...?
+      for _, entry in pairs(json["data"]) do
+        discover_item(discovered_items, "place:" .. string.format("%.0f", entry["rootPlace"]["id"]))
+        discover_item(discovered_items, "universe:" .. string.format("%.0f", entry["id"]))
+      end
+
+      local nextpagecursor = json["nextPageCursor"]
+      if nextpagecursor ~= cjson.null then
+        discover_item(discovered_items, "group_games-cursored:"..groupgames_id..":"..nextpagecursor)
+      end
     end
+
+    local wall_id = string.match(url, "^https?://groups%.roblox%.com/v1/groups/([0-9]+)/wall/posts%?")
+    if wall_id then
+      json = cjson.decode(html)
+      for _, entry in pairs(json["data"]) do
+        if entry["poster"] ~= cjson.null then
+          discover_item(discovered_items, "user:" .. string.format("%.0f", entry["poster"]["userId"]))
+        end
+      end
+
+      local nextpagecursor = json["nextPageCursor"]
+      if nextpagecursor ~= cjson.null then
+        discover_item(discovered_items, "group_wall_v1-cursored:"..wall_id..":"..nextpagecursor)
+      end
+    end
+
+    local members_id = string.match(url, "^https?://groups.roblox.com/v1/groups/(%d+)/users%?")
+    if members_id and status_code ~= 429 and status_code ~= 400 then
+      json = cjson.decode(html)
+      for _, entry in pairs(json["data"]) do
+        discover_item(discovered_items, "user:" .. string.format("%.0f", entry["user"]["userId"]))
+      end
+
+      local nextpagecursor = json["nextPageCursor"]
+      if nextpagecursor ~= cjson.null then
+        discover_item(discovered_items, "group_members-cursored:"..members_id..":"..nextpagecursor)
+      end
+    end
+
     -- group end --
 
 
@@ -1461,14 +1518,21 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
     return wget.actions.NOTHING
   end
 
-  -- friends returns 403 if specified user is in the uk
-  if string.match(url["url"], "friends%.roblox%.com/v1/users/[0-9]+/friends/find")
-    and status_code == 403 then
+  if (
+    -- friends returns 403 if specified user is in the uk
+    string.match(url["url"], "friends%.roblox%.com/v1/users/[0-9]+/friends/find")
+    -- returns 403 if group wall isn't accessible
+    or string.match(url["url"], "groups%.roblox%.com/v1/groups/[0-9]+/wall/posts%?")
+  )
+  and status_code == 403 then
     return wget.actions.NOTHING
   end
 
-  if string.match(url["url"], "thumbnails%.roblox%.com/v1/")
-    and status_code == 400 then
+  if (
+    string.match(url["url"], "thumbnails%.roblox%.com/v1/")
+    or string.match(url["url"], "groups%.roblox%.com/v1/groups/[0-9]+/users%?")
+  )
+  and status_code == 400 then
     return wget.actions.NOTHING
   end
 
