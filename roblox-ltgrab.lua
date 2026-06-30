@@ -983,7 +983,6 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_item(discovered_items, "universe:" .. universeId)
         discover_item(discovered_items, "user:" .. creatorId)
         discover_item(discovered_items, "place:" .. rootPlaceId)
-        discover_item(discovered_items, "economy:" .. rootPlaceId)
       end
 
       local nextpagecursor = json["nextPageCursor"]
@@ -1282,19 +1281,21 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
 
     -- places start --
-    -- TODO: urls to add:
-    -- https://www.roblox.com/games/getgamepassesinnerpartial?startIndex=0&maxRows=50&placeId=8737899170
 
     function place_check()
       check("https://www.roblox.com/games/votingservice/" .. item_value)
       check("https://apis.roblox.com/universes/v1/places/"..item_value.."/universe")  -- universe: item
+      check("https://www.roblox.com/games/getgamepassesinnerpartial?startIndex=1&maxRows=50&placeId="..item_value)
 
       discover_item(discovered_items, "economy:" .. string.format("%.0f", item_value))
       discover_item(discovered_items, "thumbnail:places/gameicons?placeIds=" .. string.format("%.0f", item_value))
     end
+
+    -- games not viewable on web
     if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+$") then
       place_check()
     end
+    -- games viewable on web, redirected
     if string.match(url, "^https?://www%.roblox%.com/games/[0-9]+/[0-9a-zA-Z-]+$") then
       check("https://web.roblox.com/games/" .. item_value)
       place_check()
@@ -1305,6 +1306,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       local uniIdStr = string.format("%.0f", json["universeId"])
       discover_item(discovered_items, "universe:" .. string.format("%.0f", uniIdStr))
     end
+
     -- places end --
 
 
@@ -1315,6 +1317,21 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       discover_item(discovered_items, "economy:" .. string.format("%.0f", json["IconImageAssetId"]))
       discover_item(discovered_items, "thumbnail:assets?assetIds=" .. string.format("%.0f", json["IconImageAssetId"]))
       discover_item(discovered_items, string.lower(json["Creator"]["CreatorType"]) .. ":" .. string.format(json["Creator"]["Id"]))
+    end
+
+    local ggip_startIndex =
+      -- starts at one, ew
+      string.match(url, "^https?://www%.roblox%.com/games/getgamepassesinnerpartial%?startIndex=([0-9]+)&maxRows=50&placeId=[0-9]+$")
+    if ggip_startIndex then
+      for gamepass_id in string.gmatch(html, '<a href="/game%-pass/([0-9]+)/') do
+        print(gamepass_id)
+        discover_item(discovered_items, "gamepass:" .. gamepass_id)
+      end
+      -- guests can only see 5 gamepasses with this one,
+      -- if it happens to change then uncomment this
+      -- if html ~= "" then
+      --   check("https://www.roblox.com/games/getgamepassesinnerpartial?startIndex="..(tonumber(ggip_startIndex)+50).."&maxRows=50&placeId="..item_value)
+      -- end
     end
     
     -- gamepasses/game pass end --
