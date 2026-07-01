@@ -23,6 +23,10 @@ The [Roblox Fandom Wiki](https://roblox.fandom.com/wiki/ID) currently states the
 -   Every asset in the [Roblox Set Archive](https://sets.pizzaboxer.xyz/) (PostgreSQL dump is available.)
 -   Every Roblox-related ID from ArchiveTeam's crawl of the [Roblox Forums](https://archive.org/details/archiveteam_roblox).
     -   *Don't have access to this, so it would be nice for someone at AT to help out. Just be wary of Roblox's old URL formats...*
+-   User, Group and Asset IDs that were discovered in:
+    -   [robloxgroups-grab](https://github.com/ArchiveTeam/robloxgroups-grab)
+    -   [roblox-assets-grab](https://github.com/ArchiveTeam/roblox-assets-grab)
+    -   [roblox-marketplace-comments-grab](https://github.com/ArchiveTeam/roblox-marketplace-comments-grab)
 -   Every asset created by the official [Roblox](https://www.roblox.com/users/1/profile) account, such as:
     -   [Catalog items](https://www.roblox.com/catalog?CreatorName=Roblox&IncludeNotForSale)
     -   Creator items like [Models](https://create.roblox.com/store/models?creatorName=Roblox) & [Decals](https://create.roblox.com/store/decals?creatorName=Roblox), etc.
